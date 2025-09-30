@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Bus Booking System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        .offline-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            color: var(--warning-color);
+            margin-bottom: 1rem;
+        }
+        
+        .offline-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .offline-message {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 400px;
+        }
+        
+        .retry-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .retry-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .offline-tips {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border-left: 4px solid var(--warning-color);
+            max-width: 500px;
+        }
+        
+        .offline-tips h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        
+        .offline-tips ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            text-align: left;
+        }
+        
+        .offline-tips li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <i class="fas fa-wifi-slash"></i>
+        </div>
+        
+        <h1 class="offline-title">You're Offline</h1>
+        
+        <p class="offline-message">
+            It looks like you're not connected to the internet. 
+            Please check your connection and try again.
+        </p>
+        
+        <button class="retry-btn" onclick="window.location.reload()">
+            <i class="fas fa-redo"></i> Try Again
+        </button>
+        
+        <div class="offline-tips">
+            <h3>While you're offline:</h3>
+            <ul>
+                <li>Check your internet connection</li>
+                <li>Try refreshing the page when back online</li>
+                <li>Some cached data may still be available</li>
+                <li>Your bookings will sync when connection is restored</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Listen for online event
+        window.addEventListener('online', function() {
+            // Show a message that we're back online
+            const message = document.createElement('div');
+            message.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 1rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+            `;
+            message.innerHTML = '<i class="fas fa-wifi"></i> Connection restored! Redirecting...';
+            document.body.appendChild(message);
+            
+            // Redirect to main page after a short delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        });
+        
+        // Add slide animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+[
+    {
+        "id": "note_68dabf5762b85",
+        "employee_id": "UI_REFRESH_TEST_1791184202",
+        "booking_id": "68daa2a1672c3",
+        "bus_number": "BUS001",
+        "schedule_date": "2025-09-30",
+        "time": "2025-09-29 22:48:15",
+        "type": "booking_cancelled",
+        "message": "Your booking for bus BUS001 on 2025-09-30 was cancelled: Bus removed by admin; booking reset. Please reapply your booking.",
+        "delivered": false
+    },
+    {
+        "id": "note_68dabf57838fa",
+        "employee_id": "11453732",
+        "booking_id": "68daa61d983a5",
+        "bus_number": "BUS001",
+        "schedule_date": "2025-09-29",
+        "time": "2025-09-29 22:48:15",
+        "type": "booking_cancelled",
+        "message": "Your booking for bus BUS001 on 2025-09-29 was cancelled: Bus removed by admin; booking reset. Please reapply your booking.",
+        "delivered": true
+    },
+    {
+        "id": "note_68dabf578eedb",
+        "employee_id": "11453732",
+        "booking_id": "68daa7ca2302b",
+        "bus_number": "BUS003",
+        "schedule_date": "2025-09-29",
+        "time": "2025-09-29 22:48:15",
+        "type": "booking_cancelled",
+        "message": "Your booking for bus BUS003 on 2025-09-29 was cancelled: Bus removed by admin; booking reset. Please reapply your booking.",
+        "delivered": true
+    }
+]

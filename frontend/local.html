@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking System</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Employee Bus Booking System - Book your daily commute">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Bus Booking">
+    
+    <!-- Security Headers - Only allow local resources -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <h2>Loading Bus Booking System...</h2>
+        <p>Please wait while we prepare your experience</p>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>
+                    <span class="bus-icon">🚌</span>
+                    Bus Booking System
+                </h1>
+                <div class="header-info">
+                    <span id="current-date"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Worker ID Input Section -->
+            <section id="worker-id-section" class="section">
+                <div class="card">
+                    <h2>Enter Your Worker ID</h2>
+                    <div class="input-group">
+                        <label for="worker-id-input">Worker ID *</label>
+                        <input 
+                            type="text" 
+                            id="worker-id-input" 
+                            placeholder="Enter your 7-digit Worker ID"
+                            maxlength="10"
+                            autocomplete="off"
+                        >
+                        <div class="input-help">
+                            Enter your company-assigned Worker ID (7-10 digits)
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button id="check-status-btn" class="btn btn-primary">
+                            Check Status
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schedules Section -->
+            <section id="schedules-section" class="section hidden">
+                <div class="section-header">
+                    <h2>Available Bus Schedules</h2>
+                    <p>Select a schedule to book your slot for today</p>
+                </div>
+                <div id="schedules-container" class="schedules-grid">
+                    <!-- Schedules will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Status Section -->
+            <section id="status-section" class="section hidden">
+                <div class="card">
+                    <h2>Your Booking Status</h2>
+                    <div id="status-container">
+                        <!-- Status will be loaded here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2024 Bus Booking System. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts - NO SERVICE WORKER -->
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    <script>
+        // Override API service to use local data only
+        class LocalAPIService {
+            constructor() {
+                this.baseURL = '/api';
+            }
+            
+            async getAvailableSchedules(date = null) {
+                // Return local data instead of making fetch calls
+                return {
+                    success: true,
+                    data: {
+                        schedules: [
+                            {
+                                id: 1,
+                                name: 'Morning Shift - Bus A',
+                                departure_time: '08:00',
+                                arrival_time: '18:00',
+                                capacity: 45,
+                                available_seats: 32,
+                                route: 'City Center to Industrial Park',
+                                type: 'morning',
+                                schedule_type: 'morning'
+                            },
+                            {
+                                id: 2,
+                                name: 'Evening Shift - Bus B',
+                                departure_time: '18:30',
+                                arrival_time: '04:30',
+                                capacity: 45,
+                                available_seats: 28,
+                                route: 'Industrial Park to City Center',
+                                type: 'evening',
+                                schedule_type: 'evening'
+                            },
+                            {
+                                id: 3,
+                                name: 'Night Shift - Bus C',
+                                departure_time: '22:00',
+                                arrival_time: '08:00',
+                                capacity: 40,
+                                available_seats: 15,
+                                route: 'City Center to Industrial Park',
+                                type: 'night',
+                                schedule_type: 'night'
+                            }
+                        ]
+                    },
+                    message: 'Schedules retrieved successfully'
+                };
+            }
+            
+            async createBooking(data) {
+                // Simulate successful booking
+                return {
+                    success: true,
+                    data: {
+                        booking_id: 'BK' + Date.now(),
+                        status: 'confirmed'
+                    },
+                    message: 'Booking created successfully'
+                };
+            }
+        }
+        
+        // Use local API service
+        const API = new LocalAPIService();
+    </script>
+    <script src="/assets/js/components.js"></script>
+    <script src="/assets/js/app.js"></script>
+</body>
+</html>

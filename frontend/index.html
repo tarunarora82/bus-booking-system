@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="desion" content="Employee Bus Slot Booking System">
+    <meta name="theme-color" content="#2c5aa0">
+    
+    <title>Employee Bus Booking System</title>
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="assets/css/styles.css" as="style">
+    <link rel="preload" href="assets/js/app.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/enhanced-styles.css">
+    
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+</head>
+<body>
+    <!-- Loading screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading Bus Booking System...</p>
+    </div>
+
+    <!-- Offline indicator -->
+    <div id="offline-indicator" class="offline-indicator" style="display: none;">
+        <span>You are currently offline</span>
+    </div>
+
+    <!-- Main application -->
+    <div id="app" class="app" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1 class="header-title">
+                    <i class="icon-bus"></i>
+                    Employee Bus Booking System
+                </h1>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-icon" title="Refresh">
+                        <i class="icon-refresh"></i>
+                    </button>
+                    <button id="settings-btn" class="btn btn-icon" title="Settings">
+                        <i class="icon-settings"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Disclaimer banner -->
+                <div class="disclaimer-banner">
+                    <i class="icon-warning"></i>
+                    <div class="disclaimer-text">
+                        <strong>Important:</strong> Booking a slot on the bus does not imply or confirm your physical attendance at the office. Employees must follow the company's attendance policy independently to mark their presence at work.
+                    </div>
+                </div>
+
+                <!-- Employee ID input section -->
+                <div class="worker-id-section">
+                    <div class="input-group">
+                        <label for="employee-id" class="input-label">
+                            <i class="icon-user"></i>
+                            Employee ID (7-10 digits)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="employee-id" 
+                            class="input-field" 
+                            pattern="[0-9]{7,10}" 
+                            placeholder="Enter your employee ID" 
+                            maxlength="10"
+                            autocomplete="username"
+                            required
+                        >
+                        <button id="check-status-btn" class="btn btn-primary">
+                            <i class="icon-search"></i>
+                            Select Bus
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Booking status section -->
+                <div id="booking-status" class="booking-status" style="display: none;">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+
+                <!-- Schedules container -->
+                <div id="schedules-container" class="schedules-container" style="display: none;">
+                    <!-- Schedule cards will be dynamically generated -->
+                </div>
+
+                <!-- Booking history -->
+                <div id="booking-history" class="booking-history" style="display: none;">
+                    <h3>Your Recent Bookings</h3>
+                    <div id="history-list" class="history-list">
+                        <!-- Booking history items will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2024 Bus Booking System. All rights reserved.</p>
+                <p class="footer-links">
+                    <a href="#" id="help-link">Help</a> | 
+                    <a href="#" id="contact-link">Contact</a> | 
+                    <a href="admin/index.html">Admin</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal for confirmations -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirm Action</h3>
+                <button id="modal-close" class="btn btn-icon">
+                    <i class="icon-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- PWA install prompt -->
+    <div id="install-prompt" class="install-prompt" style="display: none;">
+        <div class="install-prompt-content">
+            <i class="icon-download"></i>
+            <div class="install-prompt-text">
+                <h4>Install Bus Booking App</h4>
+                <p>Get quick access to bus bookings right from your home screen</p>
+            </div>
+            <div class="install-prompt-actions">
+                <button id="install-dismiss" class="btn btn-secondary">Not now</button>
+                <button id="install-accept" class="btn btn-primary">Install</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/bus-config.js"></script>
+    <script src="assets/js/api-realtime.js"></script>
+    <script src="assets/js/modal.js"></script>
+    <script>
+        // Initialize Real-time API Service for production
+        console.log('🚀 Initializing Real-time API Service...');
+        window.API = new RealTimeAPIService();
+        
+        // Start real-time updates
+        API.startRealTimeUpdates();
+        
+        console.log('✅ Real-time API Service initialized successfully');
+    </script>
+    <script src="assets/js/app-enhanced.js"></script>
+    
+    <!-- Service Worker DISABLED for corporate proxy compatibility -->
+    <script>
+        // NO SERVICE WORKER - Pure online system only
+        console.log('🌐 Service Worker disabled - Pure online system for corporate environments');
+        
+        // Remove any existing service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Removed existing service worker:', registration);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

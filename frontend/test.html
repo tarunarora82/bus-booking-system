@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Bus Booking System</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-result { padding: 15px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Bus Booking System - API Test</h1>
+        <p>This page tests if all JavaScript files load correctly and the API service works.</p>
+        
+        <div id="test-results">
+            <div class="test-result info">🔄 Running tests...</div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="runTests()">🔄 Run Tests Again</button>
+            <button onclick="window.location.href='/index.html'">🚀 Go to Main App</button>
+        </div>
+    </div>
+
+    <!-- Load the same scripts as main app -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/api-offline.js"></script>
+    <script>
+        // Ensure API is available globally
+        console.log('API initialization check:', typeof API !== 'undefined' ? 'SUCCESS' : 'FAILED');
+        if (typeof API === 'undefined') {
+            console.error('Critical: API not initialized');
+        }
+    </script>
+
+    <script>
+        let testResults = [];
+
+        function addTestResult(message, type = 'info') {
+            testResults.push({ message, type, timestamp: new Date().toLocaleTimeString() });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults
+                .map(result => `<div class="test-result ${result.type}">[${result.timestamp}] ${result.message}</div>`)
+                .join('');
+        }
+
+        async function runTests() {
+            testResults = [];
+            addTestResult('🔄 Starting API tests...', 'info');
+
+            // Test 1: Check if core objects exist
+            try {
+                if (typeof APP_CONFIG !== 'undefined') {
+                    addTestResult('✅ APP_CONFIG loaded successfully', 'success');
+                } else {
+                    addTestResult('❌ APP_CONFIG not found', 'error');
+                }
+
+                if (typeof Utils !== 'undefined') {
+                    addTestResult('✅ Utils loaded successfully', 'success');
+                } else {
+                    addTestResult('❌ Utils not found', 'error');
+                }
+
+                if (typeof API !== 'undefined') {
+                    addTestResult('✅ API service loaded successfully', 'success');
+                    addTestResult(`✅ API type: ${API.constructor.name}`, 'success');
+                } else {
+                    addTestResult('❌ API service not found - This is the main issue!', 'error');
+                    return;
+                }
+
+            } catch (error) {
+                addTestResult(`❌ Core objects test failed: ${error.message}`, 'error');
+                return;
+            }
+
+            // Test 2: Test API methods
+            try {
+                addTestResult('🔄 Testing API methods...', 'info');
+
+                const schedulesResponse = await API.getAvailableSchedules();
+                if (schedulesResponse.success && schedulesResponse.data.schedules) {
+                    addTestResult(`✅ getAvailableSchedules: Found ${schedulesResponse.data.schedules.length} schedules`, 'success');
+                } else {
+                    addTestResult('❌ getAvailableSchedules failed', 'error');
+                }
+
+            } catch (error) {
+                addTestResult(`❌ API methods test failed: ${error.message}`, 'error');
+            }
+
+            addTestResult('✅ All tests completed!', 'success');
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+MIT License
+
+Copyright (c) 2024 Bus Slot Booking System
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Third-Party Licenses
+
+This software includes third-party components with the following licenses:
+
+### Docker
+- Licensed under the Apache License 2.0
+- Copyright Docker, Inc.
+
+### MySQL
+- Licensed under the GNU General Public License v2.0
+- Copyright Oracle Corporation
+
+### Redis
+- Licensed under the BSD 3-Clause License
+- Copyright Redis Ltd.
+
+### Nginx
+- Licensed under the BSD 2-Clause License
+- Copyright Igor Sysoev, Nginx Inc.
+
+### PHP
+- Licensed under the PHP License v3.01
+- Copyright The PHP Group
+
+### Font Awesome (Icons)
+- Licensed under the Font Awesome Free License
+- Copyright Fonticons, Inc.
+
+### PHPMailer
+- Licensed under the GNU Lesser General Public License v2.1
+- Copyright Marcus Bointon, Jim Jagielski
+
+## Attribution
+
+This project utilizes open-source components and libraries. We acknowledge and are grateful to the developers of these projects for their contributions to the open-source community.
+
+## Disclaimer
+
+This software is provided for educational and demonstration purposes. While it follows security best practices, please ensure proper security review and testing before deploying in a production environment.
+
+## Contact
+
+For questions about licensing or commercial use, please contact the project maintainers.

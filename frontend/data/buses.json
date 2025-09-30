@@ -1,0 +1,40 @@
+[
+    {
+        "bus_number": "BUS004",
+        "route": "Metro to Office",
+        "capacity": 40,
+        "departure_time": "08:00",
+        "arrival_time": "08:30",
+        "slot": "morning"
+    },
+    {
+        "bus_number": "BUS005",
+        "route": "Downtown to Office",
+        "capacity": 35,
+        "departure_time": "17:00",
+        "arrival_time": "17:30",
+        "slot": "evening"
+    },
+    {
+        "bus_number": "BUS006",
+        "route": "Office to Shopping Mall",
+        "capacity": 30,
+        "departure_time": "18:00",
+        "arrival_time": "18:45",
+        "slot": "evening"
+    },
+    {
+        "bus_number": "113A",
+        "route": "Whitefield",
+        "capacity": 50,
+        "departure_time": "16:00",
+        "arrival_time": "16:00"
+    },
+    {
+        "bus_number": null,
+        "route": null,
+        "capacity": 0,
+        "departure_time": null,
+        "arrival_time": null
+    }
+]

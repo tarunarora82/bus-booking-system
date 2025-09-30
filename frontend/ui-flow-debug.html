@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UI Flow Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 5px; }
+        #log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Complete UI Flow Debug Test</h1>
+    
+    <div class="test-section">
+        <h3>Employee Input</h3>
+        <input type="text" id="employee-id" placeholder="Enter Employee ID" value="DEBUG_TEST_123">
+        <button onclick="testCompleteFlow()">🧪 Test Complete UI Flow</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Individual Tests</h3>
+        <button onclick="testEmployeeBookings()">Test Employee Bookings</button>
+        <button onclick="testAvailableBuses()">Test Available Buses</button>
+        <button onclick="testBookingCreation()">Test Booking Creation</button>
+        <button onclick="clearBookings()">Clear All Bookings</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Log</h3>
+        <div id="log"></div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Exact copy of apiCall function from working.html
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+            
+            try {
+                // Map endpoints to correct paths - EXACT COPY FROM WORKING.HTML
+                let apiUrl;
+                
+                if (endpoint.startsWith('employee/bookings/')) {
+                    const employeeId = endpoint.split('/')[2];
+                    apiUrl = `http://localhost:3000/query-api.php?action=employee-bookings&employee_id=${employeeId}&date=${new Date().toISOString().split('T')[0]}`;
+                } else if (endpoint === 'buses/available') {
+                    apiUrl = 'http://localhost:3000/query-api.php?action=available-buses';
+                } else if (endpoint === 'booking/create') {
+                    apiUrl = 'http://localhost:3000/query-api.php';
+                    config.body = JSON.stringify({
+                        action: 'create-booking',
+                        ...JSON.parse(config.body || '{}')
+                    });
+                } else if (endpoint === 'booking/cancel') {
+                    apiUrl = 'http://localhost:3000/query-api.php';
+                    config.body = JSON.stringify({
+                        action: 'cancel-booking',
+                        ...JSON.parse(config.body || '{}')
+                    });
+                } else {
+                    // Try direct API routes first, then fallback
+                    apiUrl = `${API_BASE_URL}/${endpoint}`;
+                }
+                
+                log(`Making API call to: ${apiUrl}`);
+                log(`Method: ${method}, Data: ${config.body || 'none'}`);
+                
+                const response = await fetch(apiUrl, config);
+                const text = await response.text();
+                
+                // Check if response is HTML (error page)
+                if (text.startsWith('<') || text.includes('<!DOCTYPE')) {
+                    throw new Error('API endpoint not found or server error');
+                }
+                
+                const result = JSON.parse(text);
+                log(`API Response: ${JSON.stringify(result)}`, 'success');
+                return result;
+            } catch (error) {
+                log(`API Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function testEmployeeBookings() {
+            log('=== Testing Employee Bookings API ===');
+            const employeeId = document.getElementById('employee-id').value.trim();
+            
+            try {
+                const result = await apiCall(`employee/bookings/${employeeId}`);
+                log(`Employee bookings result: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                log(`Employee bookings failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAvailableBuses() {
+            log('=== Testing Available Buses API ===');
+            
+            try {
+                const result = await apiCall('buses/available');
+                log(`Available buses result: Status=${result.status}, Count=${result.data ? result.data.length : 0}`, 'success');
+                if (result.data && result.data.length > 0) {
+                    log(`First bus: ${JSON.stringify(result.data[0])}`, 'info');
+                }
+            } catch (error) {
+                log(`Available buses failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBookingCreation() {
+            log('=== Testing Booking Creation API ===');
+            const employeeId = document.getElementById('employee-id').value.trim();
+            
+            try {
+                const result = await apiCall('booking/create', 'POST', {
+                    employee_id: employeeId,
+                    bus_number: 'BUS001',
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+                log(`Booking creation result: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                log(`Booking creation failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearBookings() {
+            log('=== Clearing All Bookings ===');
+            
+            try {
+                const response = await fetch('http://localhost:3000/query-api.php?action=delete-all-bookings', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                log(`Clear bookings result: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                log(`Clear bookings failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCompleteFlow() {
+            log('🚀 === STARTING COMPLETE UI FLOW TEST ===');
+            const employeeId = document.getElementById('employee-id').value.trim();
+            
+            if (!employeeId || employeeId.length < 7) {
+                log('❌ Please enter a valid Employee ID (7+ digits)', 'error');
+                return;
+            }
+
+            try {
+                // Step 1: Check existing bookings (what checkEmployee() does first)
+                log('📋 Step 1: Checking existing employee bookings...');
+                const bookingCheck = await apiCall(`employee/bookings/${employeeId}`);
+                log(`Existing bookings: ${bookingCheck.data ? bookingCheck.data.length : 0}`, 'success');
+
+                // Step 2: Get available buses (what checkEmployee() does next)
+                log('🚌 Step 2: Loading available buses...');
+                const buses = await apiCall('buses/available');
+                log(`Available buses loaded: ${buses.data ? buses.data.length : 0}`, 'success');
+                
+                if (buses.data && buses.data.length > 0) {
+                    const morningBuses = buses.data.filter(bus => bus.slot === 'morning');
+                    const eveningBuses = buses.data.filter(bus => bus.slot === 'evening');
+                    log(`Morning buses: ${morningBuses.length}, Evening buses: ${eveningBuses.length}`, 'info');
+                }
+
+                // Step 3: Try to book a morning slot (what bookBus() does)
+                log('📅 Step 3: Attempting to book morning slot (BUS001)...');
+                const bookingResult = await apiCall('booking/create', 'POST', {
+                    employee_id: employeeId,
+                    bus_number: 'BUS001',
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+                
+                if (bookingResult.status === 'success') {
+                    log(`✅ Booking successful! Slot: ${bookingResult.booking.slot}`, 'success');
+                    
+                    // Step 4: Refresh employee bookings (what checkEmployee() does after booking)
+                    log('🔄 Step 4: Refreshing employee bookings...');
+                    const refreshedBookings = await apiCall(`employee/bookings/${employeeId}`);
+                    log(`Post-booking check: ${refreshedBookings.data ? refreshedBookings.data.length : 0} bookings found`, 'success');
+                    
+                } else {
+                    log(`❌ Booking failed: ${bookingResult.message}`, 'error');
+                }
+
+                log('🎉 COMPLETE FLOW TEST FINISHED!', 'success');
+                
+            } catch (error) {
+                log(`💥 FLOW TEST FAILED: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic connectivity test on load
+        window.onload = function() {
+            log('🔌 Testing basic API connectivity...');
+            testAvailableBuses();
+        };
+    </script>
+</body>
+</html>

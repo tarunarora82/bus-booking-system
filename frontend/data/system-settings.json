@@ -1,0 +1,6 @@
+{
+    "booking_days_valid": 1,
+    "booking_freeze_minutes": 10,
+    "morning_slot_enabled": true,
+    "evening_slot_enabled": true
+}

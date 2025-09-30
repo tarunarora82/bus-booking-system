@@ -1,0 +1,24 @@
+[
+    {
+        "id": "68dbc60e20178",
+        "employee_id": "E2E_TEST_219968925",
+        "bus_number": "BUS004",
+        "schedule_date": "2025-10-01",
+        "booking_time": "2025-09-30 17:29:10",
+        "status": "active",
+        "slot": "morning",
+        "route": "Metro to Office",
+        "departure_time": "08:00"
+    },
+    {
+        "id": "68dbc6331922f",
+        "employee_id": "E2E_TEST_219968925",
+        "bus_number": "BUS005",
+        "schedule_date": "2025-10-01",
+        "booking_time": "2025-09-30 17:29:47",
+        "status": "active",
+        "slot": "evening",
+        "route": "Downtown to Office",
+        "departure_time": "17:00"
+    }
+]

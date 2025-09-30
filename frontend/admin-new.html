@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Transportation - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0068B5 0%, #00C7FD 50%, #0068B5 100%);
+            min-height: 100vh;
+            padding: 0;
+            animation: intelGradientShift 15s ease infinite;
+        }
+        
+        @keyframes intelGradientShift {
+            0%, 100% { background: linear-gradient(135deg, #0068B5 0%, #00C7FD 50%, #0068B5 100%); }
+            33% { background: linear-gradient(135deg, #00C7FD 0%, #0068B5 50%, #00C7FD 100%); }
+            66% { background: linear-gradient(135deg, #0068B5 0%, #00C7FD 30%, #0068B5 70%, #00C7FD 100%); }
+        }
+        
+        .hero-ribbon {
+            width: 100%;
+            height: 150px;
+            background-image: url('/assets/Intel India.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            margin-bottom: 20px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(0, 104, 181, 0.3);
+        }
+        
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 104, 181, 0.85) 0%, rgba(0, 199, 253, 0.7) 100%);
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hero-text {
+            color: white;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .hero-text h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hero-text p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 25px;
+            border: 1px solid rgba(0, 199, 253, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 104, 181, 0.15);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-links a, .nav-links button {
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(0, 199, 253, 0.3), rgba(0, 104, 181, 0.3));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .nav-links a:hover, .nav-links button:hover {
+            background: linear-gradient(135deg, rgba(0, 199, 253, 0.5), rgba(0, 104, 181, 0.5));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 199, 253, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #00C7FD;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 10px rgba(0, 199, 253, 0.3);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #00C7FD, #0068B5);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 199, 253, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            color: white;
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #00C7FD, #0068B5);
+            color: white;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload {
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+
+        @media (max-width: 768px) {
+            .hero-text h2 { font-size: 1.8rem; }
+            .nav-links { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .form-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-ribbon">
+        <div class="hero-overlay">
+            <div class="hero-text">
+                <h2>Intel Transportation</h2>
+                <p>Admin Dashboard - Bus Booking System</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="nav-links">
+                <a href="/admin-advanced.html">🏠 Home</a>
+                <button onclick="showSection('dashboard')">📊 Dashboard</button>
+                <button onclick="showSection('buses')">🚌 Buses</button>
+                <button onclick="showSection('employees')">👥 Employees</button>
+                <button onclick="showSection('bookings')">📋 Bookings</button>
+                <a href="/working.html">👤 User View</a>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="content-section">
+                <h2 class="section-title">📊 System Dashboard</h2>
+                <div id="dashboard-stats" class="stats-grid">
+                    <!-- Stats will be loaded here -->
+                </div>
+                <div id="dashboard-details"></div>
+            </div>
+
+            <!-- Bus Management Section -->
+            <div id="buses" class="content-section" style="display: none;">
+                <h2 class="section-title">🚌 Bus Fleet Management</h2>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="showBusTab('add')">➕ Add Bus</button>
+                    <button class="tab" onclick="showBusTab('list')">📋 Bus List</button>
+                    <button class="tab" onclick="showBusTab('bulk')">📤 Bulk Upload</button>
+                </div>
+
+                <div id="bus-add" class="tab-content active">
+                    <div class="form-group">
+                        <input type="text" id="bus-number" class="form-control" placeholder="Bus Number (e.g., BUS001)">
+                        <input type="text" id="bus-route" class="form-control" placeholder="Route Description">
+                        <input type="number" id="bus-capacity" class="form-control" placeholder="Capacity">
+                        <input type="time" id="bus-time" class="form-control" placeholder="Departure Time">
+                        <select id="bus-slot" class="form-control">
+                            <option value="">Select Slot</option>
+                            <option value="morning">Morning</option>
+                            <option value="evening">Evening</option>
+                        </select>
+                    </div>
+                    <button onclick="addBus()" class="btn btn-success">➕ Add Bus</button>
+                </div>
+
+                <div id="bus-list" class="tab-content">
+                    <button onclick="loadBuses()" class="btn">🔄 Refresh</button>
+                    <div id="buses-table" class="table-container"></div>
+                </div>
+
+                <div id="bus-bulk" class="tab-content">
+                    <div class="file-upload">
+                        <button onclick="document.getElementById('bus-file').click()" class="btn btn-success">📁 Select CSV/Excel File</button>
+                        <input type="file" id="bus-file" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleBusFile(this)">
+                        <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Bus Number, Route, Capacity, Departure Time, Slot</p>
+                        <button onclick="downloadBusTemplate()" class="btn btn-warning">📥 Download Template</button>
+                    </div>
+                    <button onclick="uploadBuses()" class="btn btn-success" id="bus-upload-btn" disabled>📤 Upload Buses</button>
+                </div>
+            </div>
+
+            <!-- Employee Management Section -->
+            <div id="employees" class="content-section" style="display: none;">
+                <h2 class="section-title">👥 Employee Management</h2>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="showEmployeeTab('add')">➕ Add Employee</button>
+                    <button class="tab" onclick="showEmployeeTab('list')">📋 Employee List</button>
+                    <button class="tab" onclick="showEmployeeTab('bulk')">📤 Bulk Upload</button>
+                </div>
+
+                <div id="employee-add" class="tab-content active">
+                    <div class="form-group">
+                        <input type="text" id="employee-id" class="form-control" placeholder="Employee ID">
+                        <input type="text" id="employee-name" class="form-control" placeholder="Full Name">
+                        <input type="email" id="employee-email" class="form-control" placeholder="Email Address">
+                        <input type="text" id="employee-dept" class="form-control" placeholder="Department">
+                    </div>
+                    <button onclick="addEmployee()" class="btn btn-success">➕ Add Employee</button>
+                </div>
+
+                <div id="employee-list" class="tab-content">
+                    <button onclick="loadEmployees()" class="btn">🔄 Refresh</button>
+                    <div id="employees-table" class="table-container"></div>
+                </div>
+
+                <div id="employee-bulk" class="tab-content">
+                    <div class="file-upload">
+                        <button onclick="document.getElementById('employee-file').click()" class="btn btn-success">📁 Select CSV/Excel File</button>
+                        <input type="file" id="employee-file" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleEmployeeFile(this)">
+                        <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Employee ID, Name, Email, Department</p>
+                        <button onclick="downloadEmployeeTemplate()" class="btn btn-warning">📥 Download Template</button>
+                    </div>
+                    <button onclick="uploadEmployees()" class="btn btn-success" id="employee-upload-btn" disabled>📤 Upload Employees</button>
+                </div>
+            </div>
+
+            <!-- Bookings Section -->
+            <div id="bookings" class="content-section" style="display: none;">
+                <h2 class="section-title">📋 Booking Management</h2>
+                <button onclick="loadBookings()" class="btn">🔄 Refresh Bookings</button>
+                <div id="bookings-table" class="table-container"></div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="content-section">
+                <h2 class="section-title">📜 Activity Log</h2>
+                <div id="activity-log" class="log-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        let busFileData = null;
+        let employeeFileData = null;
+
+        // API Helper
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            if (data) config.body = JSON.stringify(data);
+            
+            const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+            return await response.json();
+        }
+
+        // Logging
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+            
+            if (sectionId === 'dashboard') loadDashboard();
+            if (sectionId === 'buses') loadBuses();
+            if (sectionId === 'employees') loadEmployees();
+            if (sectionId === 'bookings') loadBookings();
+        }
+
+        function showBusTab(tabId) {
+            document.querySelectorAll('#buses .tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('#buses .tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`bus-${tabId}`).classList.add('active');
+        }
+
+        function showEmployeeTab(tabId) {
+            document.querySelectorAll('#employees .tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('#employees .tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`employee-${tabId}`).classList.add('active');
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                log('🔄 Loading dashboard...');
+                const [busesResult, bookingsResult] = await Promise.all([
+                    apiCall('buses/available'),
+                    apiCall('admin/recent-bookings')
+                ]);
+
+                let totalBuses = 0, totalCapacity = 0, totalBooked = 0, todayBookings = 0;
+
+                if (busesResult.status === 'success' && busesResult.data) {
+                    totalBuses = busesResult.data.length;
+                    totalCapacity = busesResult.data.reduce((sum, bus) => sum + bus.capacity, 0);
+                    totalBooked = busesResult.data.reduce((sum, bus) => sum + bus.booked_seats, 0);
+                }
+
+                if (bookingsResult.status === 'success' && bookingsResult.data) {
+                    const today = new Date().toISOString().split('T')[0];
+                    todayBookings = bookingsResult.data.filter(booking => 
+                        booking.schedule_date === today
+                    ).length;
+                }
+
+                const utilizationRate = totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
+
+                document.getElementById('dashboard-stats').innerHTML = `
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4CAF50, #45a049);">
+                        <h3>${totalBuses}</h3>
+                        <p>🚌 Active Buses</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
+                        <h3>${todayBookings}</h3>
+                        <p>📅 Today's Bookings</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                        <h3>${totalCapacity}</h3>
+                        <p>🎟️ Total Capacity</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">
+                        <h3>${utilizationRate}%</h3>
+                        <p>📊 Utilization Rate</p>
+                    </div>
+                `;
+
+                document.getElementById('dashboard-details').innerHTML = `
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
+                        <h3 style="color: white; margin-bottom: 15px;">🔄 Real-time Status</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div><strong style="color: #00C7FD;">Available Seats:</strong> ${totalCapacity - totalBooked} / ${totalCapacity}</div>
+                            <div><strong style="color: #00C7FD;">Morning Slots:</strong> ${Math.floor(totalBuses/2)} buses</div>
+                            <div><strong style="color: #00C7FD;">Evening Slots:</strong> ${Math.floor(totalBuses/2)} buses</div>
+                            <div><strong style="color: #00C7FD;">Occupancy:</strong> ${totalBooked} passengers</div>
+                        </div>
+                    </div>
+                `;
+
+                log('✅ Dashboard loaded successfully', 'success');
+            } catch (error) {
+                log(`❌ Dashboard load error: ${error.message}`, 'error');
+            }
+        }
+
+        // Bus Management
+        async function addBus() {
+            const busData = {
+                bus_number: document.getElementById('bus-number').value.trim(),
+                route: document.getElementById('bus-route').value.trim(),
+                capacity: parseInt(document.getElementById('bus-capacity').value),
+                departure_time: document.getElementById('bus-time').value,
+                slot: document.getElementById('bus-slot').value
+            };
+
+            if (!busData.bus_number || !busData.route || !busData.capacity || !busData.departure_time || !busData.slot) {
+                log('❌ Please fill all bus fields', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Adding bus ${busData.bus_number}...`);
+                const result = await apiCall('admin/add-bus', 'POST', busData);
+                
+                if (result.status === 'success') {
+                    log(`✅ Bus added: ${busData.bus_number}`, 'success');
+                    // Clear form
+                    ['bus-number', 'bus-route', 'bus-capacity', 'bus-time', 'bus-slot'].forEach(id => {
+                        document.getElementById(id).value = '';
+                    });
+                    loadBuses();
+                } else {
+                    log(`❌ Failed to add bus: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Bus add error: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadBuses() {
+            try {
+                log('🔄 Loading buses...');
+                const result = await apiCall('buses/available');
+                
+                if (result.status === 'success' && result.data) {
+                    const tableHtml = `
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Bus Number</th>
+                                    <th>Route</th>
+                                    <th>Capacity</th>
+                                    <th>Departure</th>
+                                    <th>Slot</th>
+                                    <th>Available</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(bus => `
+                                    <tr>
+                                        <td>${bus.bus_number}</td>
+                                        <td>${bus.route}</td>
+                                        <td>${bus.capacity}</td>
+                                        <td>${bus.departure_time || 'TBD'}</td>
+                                        <td>${bus.slot === 'morning' ? '🌅 Morning' : '🌆 Evening'}</td>
+                                        <td>${bus.available_seats}/${bus.capacity}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    document.getElementById('buses-table').innerHTML = tableHtml;
+                    log(`✅ Loaded ${result.data.length} buses`, 'success');
+                } else {
+                    log('❌ No buses found', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Bus load error: ${error.message}`, 'error');
+            }
+        }
+
+        // Employee Management
+        async function addEmployee() {
+            const employeeData = {
+                employee_id: document.getElementById('employee-id').value.trim(),
+                name: document.getElementById('employee-name').value.trim(),
+                email: document.getElementById('employee-email').value.trim(),
+                department: document.getElementById('employee-dept').value.trim()
+            };
+
+            if (!employeeData.employee_id || !employeeData.name || !employeeData.email) {
+                log('❌ Please fill required employee fields', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Adding employee ${employeeData.employee_id}...`);
+                const result = await apiCall('admin/add-employee', 'POST', employeeData);
+                
+                if (result.status === 'success') {
+                    log(`✅ Employee added: ${employeeData.name}`, 'success');
+                    // Clear form
+                    ['employee-id', 'employee-name', 'employee-email', 'employee-dept'].forEach(id => {
+                        document.getElementById(id).value = '';
+                    });
+                    loadEmployees();
+                } else {
+                    log(`❌ Failed to add employee: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Employee add error: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadEmployees() {
+            try {
+                log('🔄 Loading employees...');
+                const result = await apiCall('admin/employees');
+                
+                if (result.status === 'success' && result.data) {
+                    const tableHtml = `
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(emp => `
+                                    <tr>
+                                        <td>${emp.employee_id}</td>
+                                        <td>${emp.name}</td>
+                                        <td>${emp.email}</td>
+                                        <td>${emp.department || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    document.getElementById('employees-table').innerHTML = tableHtml;
+                    log(`✅ Loaded ${result.data.length} employees`, 'success');
+                } else {
+                    log('❌ No employees found', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Employee load error: ${error.message}`, 'error');
+            }
+        }
+
+        // Booking Management
+        async function loadBookings() {
+            try {
+                log('🔄 Loading bookings...');
+                const result = await apiCall('admin/recent-bookings');
+                
+                if (result.status === 'success' && result.data) {
+                    const tableHtml = `
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Bus Number</th>
+                                    <th>Route</th>
+                                    <th>Date</th>
+                                    <th>Slot</th>
+                                    <th>Departure</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(booking => `
+                                    <tr>
+                                        <td>${booking.employee_id}</td>
+                                        <td>${booking.bus_number}</td>
+                                        <td>${booking.route || 'TBD'}</td>
+                                        <td>${booking.schedule_date}</td>
+                                        <td>${booking.slot === 'morning' ? '🌅 Morning' : '🌆 Evening'}</td>
+                                        <td>${booking.departure_time || 'TBD'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    document.getElementById('bookings-table').innerHTML = tableHtml;
+                    log(`✅ Loaded ${result.data.length} bookings`, 'success');
+                } else {
+                    log('❌ No bookings found', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Booking load error: ${error.message}`, 'error');
+            }
+        }
+
+        // File Upload Handlers
+        function handleBusFile(input) {
+            if (input.files.length > 0) {
+                busFileData = input.files[0];
+                document.getElementById('bus-upload-btn').disabled = false;
+                log(`📁 Bus file selected: ${busFileData.name}`, 'info');
+            }
+        }
+
+        function handleEmployeeFile(input) {
+            if (input.files.length > 0) {
+                employeeFileData = input.files[0];
+                document.getElementById('employee-upload-btn').disabled = false;
+                log(`📁 Employee file selected: ${employeeFileData.name}`, 'info');
+            }
+        }
+
+        // Template Downloads
+        function downloadBusTemplate() {
+            const csvContent = "Bus Number,Route,Capacity,Departure Time,Slot\n" +
+                              "BUS001,Electronic City - Whitefield Express,40,08:00,morning\n" +
+                              "BUS001,Electronic City - Whitefield Express,40,16:00,evening\n" +
+                              "BUS002,Bannerghatta - Marathahalli Direct,50,08:15,morning\n" +
+                              "BUS002,Bannerghatta - Marathahalli Direct,50,16:15,evening";
+            
+            downloadCSV(csvContent, 'bus_template.csv');
+            log('✅ Bus template downloaded', 'success');
+        }
+
+        function downloadEmployeeTemplate() {
+            const csvContent = "Employee ID,Name,Email,Department\n" +
+                              "12345678,John Doe,john.doe@intel.com,Engineering\n" +
+                              "87654321,Jane Smith,jane.smith@intel.com,IT Support\n" +
+                              "11223344,Mike Johnson,mike.johnson@intel.com,Operations\n" +
+                              "44332211,Sarah Wilson,sarah.wilson@intel.com,HR";
+            
+            downloadCSV(csvContent, 'employee_template.csv');
+            log('✅ Employee template downloaded', 'success');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Bulk Upload (placeholder for now)
+        async function uploadBuses() {
+            if (!busFileData) return;
+            log('🔄 Bulk bus upload functionality coming soon...', 'info');
+        }
+
+        async function uploadEmployees() {
+            if (!employeeFileData) return;
+            log('🔄 Bulk employee upload functionality coming soon...', 'info');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Intel Transportation Admin Dashboard initialized', 'success');
+            loadDashboard();
+        });
+
+        // Auto-refresh dashboard every 60 seconds
+        setInterval(() => {
+            if (document.getElementById('dashboard').style.display !== 'none') {
+                loadDashboard();
+            }
+        }, 60000);
+    </script>
+</body>
+</html>

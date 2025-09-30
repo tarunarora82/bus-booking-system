@@ -1,0 +1,138 @@
+{
+  "name": "Bus Booking System",
+  "short_name": "BusBooking",
+  "description": "Employee Bus Slot Booking System - Book your daily commute slots easily",
+  "version": "1.0.0",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2c5aa0",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "travel", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "assets/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/screenshot-mobile.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile view of the bus booking interface"
+    },
+    {
+      "src": "assets/screenshots/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of the bus booking interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Check Booking Status",
+      "short_name": "Check Status",
+      "description": "Quickly check your current booking status",
+      "url": "/#check-status",
+      "icons": [
+        {
+          "src": "assets/icons/shortcut-status.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Book Morning Slot",
+      "short_name": "Morning",
+      "description": "Book a morning bus slot",
+      "url": "/#book-morning",
+      "icons": [
+        {
+          "src": "assets/icons/shortcut-morning.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Book Evening Slot",
+      "short_name": "Evening",
+      "description": "Book an evening bus slot",
+      "url": "/#book-evening",
+      "icons": [
+        {
+          "src": "assets/icons/shortcut-evening.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "related_applications": [],
+  "permissions": [
+    "notifications"
+  ],
+  "features": [
+    "background-sync",
+    "push-messaging",
+    "web-share"
+  ]
+}

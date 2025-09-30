@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UI Refresh Test - Direct JavaScript Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f8ff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { border: 2px solid #007acc; margin: 10px 0; padding: 20px; background: white; border-radius: 8px; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #007bff; }
+        button { padding: 12px 24px; margin: 8px; background: #007acc; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #005999; }
+        #log { background: #f8f9fa; padding: 15px; height: 300px; overflow-y: scroll; font-family: 'Courier New', monospace; border: 1px solid #ddd; border-radius: 4px; }
+        input { padding: 10px; font-size: 16px; border: 2px solid #007acc; border-radius: 4px; margin: 5px; }
+        .bus-item { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 8px; background: #f9f9f9; }
+        .book-btn, .cancel-btn { padding: 8px 16px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .book-btn { background: #28a745; color: white; }
+        .cancel-btn { background: #dc3545; color: white; }
+        .book-btn:disabled { background: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 UI REFRESH DEBUG - Direct JavaScript Testing</h1>
+        
+        <div class="test-section">
+            <h3>🆔 Test Employee Input</h3>
+            <input type="text" id="employee-id" placeholder="Enter Employee ID" value="JS_DEBUG_TEST_123">
+            <button onclick="testBookingFlow()">🧪 Test Complete Booking + Refresh Flow</button>
+            <button onclick="clearLog()">🧹 Clear Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Test Results & Bus Display</h3>
+            <div id="bus-list"></div>
+            <div id="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Debug Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+    
+    <script>
+        // EXACT SAME API CONFIGURATION AS working.html
+        const API_BASE_URL = '/api';
+        let allBuses = [];
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result-message result-${type}" style="padding: 10px; margin: 10px 0; border-radius: 4px; background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : '#d1ecf1'};">${message}</div>`;
+        }
+
+        // EXACT COPY of apiCall function from working.html
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+            
+            try {
+                let apiUrl;
+                
+                if (endpoint.startsWith('employee/bookings/')) {
+                    const employeeId = endpoint.split('/')[2];
+                    apiUrl = `/query-api.php?action=employee-bookings&employee_id=${employeeId}&date=${new Date().toISOString().split('T')[0]}`;
+                } else if (endpoint === 'buses/available') {
+                    apiUrl = '/query-api.php?action=available-buses';
+                } else if (endpoint === 'booking/create') {
+                    apiUrl = '/query-api.php';
+                    config.body = JSON.stringify({
+                        action: 'create-booking',
+                        ...JSON.parse(config.body || '{}')
+                    });
+                } else if (endpoint === 'booking/cancel') {
+                    apiUrl = '/query-api.php';
+                    config.body = JSON.stringify({
+                        action: 'cancel-booking',
+                        ...JSON.parse(config.body || '{}')
+                    });
+                } else {
+                    apiUrl = `${API_BASE_URL}/${endpoint}`;
+                }
+                
+                log(`🔗 API Call: ${method} ${apiUrl}`);
+                
+                const response = await fetch(apiUrl, config);
+                const text = await response.text();
+                
+                if (text.startsWith('<') || text.includes('<!DOCTYPE')) {
+                    throw new Error('API endpoint returned HTML - server error');
+                }
+                
+                const result = JSON.parse(text);
+                log(`📥 API Response: ${JSON.stringify(result)}`, result.status === 'success' ? 'success' : 'error');
+                return result;
+            } catch (error) {
+                log(`💥 API Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // EXACT COPY of renderBusList function from working.html
+        function renderBusList(buses, hasExistingBooking = false, existingBooking = null) {
+            const busList = document.getElementById('bus-list');
+            busList.innerHTML = '<h4>🚌 Available Buses:</h4>';
+            
+            log(`🎨 Rendering bus list: ${buses.length} buses, hasExistingBooking: ${hasExistingBooking}, existingBooking: ${existingBooking ? existingBooking.length : 0}`, 'info');
+            
+            buses.forEach((bus, index) => {
+                const busItem = document.createElement('div');
+                busItem.className = 'bus-item';
+                
+                let buttonHtml = '';
+                let statusHtml = '';
+                
+                // Check if this bus is already booked
+                let isThisBusBooked = false;
+                if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
+                    isThisBusBooked = existingBooking.some(booking => booking.bus_number === bus.bus_number);
+                    log(`🔍 Checking bus ${bus.bus_number}: isThisBusBooked = ${isThisBusBooked}`, 'info');
+                }
+                
+                if (isThisBusBooked) {
+                    // This specific bus is already booked by the employee
+                    statusHtml = '<div style="color: #fff; font-weight: bold; padding: 8px 12px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; margin: 10px 0; display: inline-block;">✅ YOUR CURRENT BOOKING</div>';
+                    buttonHtml = `<button class="cancel-btn" onclick="cancelBooking('${bus.bus_number}')">❌ Cancel Booking</button>`;
+                    log(`🎯 Bus ${bus.bus_number}: Showing cancel button (user's current booking)`, 'success');
+                } else if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
+                    // Check if this slot is already taken
+                    const hasSlotBooking = existingBooking.some(booking => booking.slot === bus.slot);
+                    if (hasSlotBooking) {
+                        const slotName = bus.slot === 'morning' ? 'Morning' : 'Evening';
+                        statusHtml = `<div style="color: #ffffff; font-weight: bold; padding: 12px 16px; background: rgba(220, 53, 69, 0.9); border-radius: 10px; margin: 10px 0; display: inline-block;">⚠️ ${slotName} Slot Already Booked</div>`;
+                        buttonHtml = '<button class="book-btn" disabled>🚫 Slot Not Available</button>';
+                        log(`⚠️ Bus ${bus.bus_number}: Slot ${bus.slot} already booked, showing disabled button`, 'info');
+                    } else {
+                        // No existing booking for this slot - can book this bus  
+                        buttonHtml = `<button class="book-btn" onclick="bookBus('${bus.bus_number}')">📅 Book This Bus</button>`;
+                        log(`✅ Bus ${bus.bus_number}: Slot ${bus.slot} available, showing book button`, 'success');
+                    }
+                } else {
+                    // No existing booking - can book this bus
+                    buttonHtml = `<button class="book-btn" onclick="bookBus('${bus.bus_number}')">📅 Book This Bus</button>`;
+                    log(`✅ Bus ${bus.bus_number}: No existing bookings, showing book button`, 'success');
+                }
+
+                const slotIndicator = bus.slot === 'morning' ? '🌅' : (bus.slot === 'evening' ? '🌆' : '🕐');
+                const slotName = bus.slot === 'morning' ? 'Morning' : (bus.slot === 'evening' ? 'Evening' : 'Regular');
+                
+                busItem.innerHTML = `
+                    <div><strong>🚌 ${bus.bus_number} ${slotIndicator}</strong></div>
+                    <div>📍 Route: ${bus.route}</div>
+                    <div>⏰ Departure: ${bus.departure_time} (${slotName})</div>
+                    <div>👥 Capacity: ${bus.capacity} seats</div>
+                    ${statusHtml}
+                    ${buttonHtml}
+                `;
+                busList.appendChild(busItem);
+            });
+        }
+
+        // Simplified booking function for testing
+        async function bookBus(busNumber) {
+            const employeeId = document.getElementById('employee-id').value.trim();
+            log(`🎯 Starting booking process for bus ${busNumber}`, 'info');
+            
+            try {
+                showResult('🔄 Processing your booking...', 'info');
+                
+                const response = await apiCall('booking/create', 'POST', {
+                    employee_id: employeeId,
+                    bus_number: busNumber,
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+                
+                if (response.status === 'success') {
+                    const slot = response.booking ? response.booking.slot : 'unknown';
+                    showResult(`✅ Booking confirmed! Bus: ${busNumber}, Slot: ${slot}`, 'success');
+                    log(`✅ Booking successful, now calling checkEmployee() to refresh UI`, 'success');
+                    
+                    // Immediately refresh the bus list
+                    await checkEmployee();
+                } else {
+                    showResult(`❌ Booking failed: ${response.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Simplified checkEmployee function for testing
+        async function checkEmployee() {
+            const employeeId = document.getElementById('employee-id').value.trim();
+            log(`🔍 checkEmployee() called for ${employeeId}`, 'info');
+            
+            try {
+                // Check existing bookings
+                let hasExistingBooking = false;
+                let existingBooking = null;
+                
+                const bookingCheck = await apiCall(`employee/bookings/${employeeId}`);
+                log(`📋 Booking check result: ${JSON.stringify(bookingCheck)}`, 'info');
+                
+                if (bookingCheck.status === 'success' && bookingCheck.data && bookingCheck.data.length > 0) {
+                    hasExistingBooking = true;
+                    existingBooking = bookingCheck.data;
+                    log(`✅ Found ${existingBooking.length} existing bookings`, 'success');
+                } else {
+                    log(`ℹ️ No existing bookings found`, 'info');
+                }
+                
+                // Get available buses
+                const buses = await apiCall('buses/available');
+                
+                if (buses.status === 'success' && buses.data) {
+                    allBuses = buses.data;
+                    log(`🚌 Loaded ${buses.data.length} buses, calling renderBusList()`, 'info');
+                    renderBusList(buses.data, hasExistingBooking, existingBooking);
+                    
+                    if (hasExistingBooking) {
+                        showResult(`✅ Employee has ${existingBooking.length} existing booking(s). UI should show cancel buttons!`, 'success');
+                    } else {
+                        showResult(`✅ No existing bookings. UI should show book buttons!`, 'success');
+                    }
+                } else {
+                    showResult('❌ No buses available', 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+                log(`💥 checkEmployee() failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function cancelBooking(busNumber) {
+            const employeeId = document.getElementById('employee-id').value.trim();
+            log(`🗑️ Starting cancellation for bus ${busNumber}`, 'info');
+            
+            try {
+                showResult('🔄 Cancelling your booking...', 'info');
+                
+                const response = await apiCall('booking/cancel', 'POST', {
+                    employee_id: employeeId,
+                    bus_number: busNumber
+                });
+                
+                if (response.status === 'success') {
+                    showResult('✅ Booking cancelled successfully!', 'success');
+                    log(`✅ Cancellation successful, refreshing UI`, 'success');
+                    await checkEmployee();
+                } else {
+                    showResult(`❌ Cancellation failed: ${response.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBookingFlow() {
+            log('🚀 === STARTING COMPLETE BOOKING + REFRESH TEST ===', 'success');
+            
+            try {
+                // Clear existing bookings first
+                await fetch('/query-api.php?action=delete-all-bookings', { method: 'POST' });
+                log('🧹 Cleared existing bookings', 'info');
+                
+                // Step 1: Initial load
+                log('📋 Step 1: Initial employee check', 'info');
+                await checkEmployee();
+                
+                // Small delay to see the initial state
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Step 2: Simulate booking
+                log('📅 Step 2: Simulating bus booking', 'info');
+                await bookBus('BUS001');
+                
+                log('🎉 Test complete! Check the bus list above to see if it refreshed properly.', 'success');
+                
+            } catch (error) {
+                log(`💥 Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load on page load
+        window.onload = function() {
+            log('🌐 Page loaded, testing initial API connectivity...', 'info');
+            checkEmployee();
+        };
+    </script>
+</body>
+</html>

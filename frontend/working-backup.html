@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking System - Working</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0068B5 0%, #00C7FD 50%, #0068B5 100%);
+            min-height: 100vh;
+            padding: 0;
+                    const slotDisplay = bus.slot ? (bus.slot === 'morning' ? '🌅 Morning' : '🌆 Evening') : '🌆 Evening';
+                const slotTime = bus.departure_time || '16:00';
+                
+                busItem.innerHTML = `
+                    <div class="bus-number">🚌 ${bus.bus_number}</div>
+                    <div class="bus-details">📍 Route: ${bus.route}</div>
+                    <div class="bus-details">🕐 ${slotDisplay} Departure: ${slotTime}</div>
+                    <div class="bus-details">👥 Capacity: ${bus.capacity} seats</div>
+                    <div class="availability" style="color: #fff; font-weight: bold;">✅ Available: ${bus.available_seats} seats</div>
+                    ${statusHtml}
+                    ${buttonHtml}
+                `;
+        }
+        
+        @keyframes intelGradientShift {
+            0%, 100% { background: linear-gradient(135deg, #0068B5 0%, #00C7FD 50%, #0068B5 100%); }
+            33% { background: linear-gradient(135deg, #00C7FD 0%, #0068B5 50%, #00C7FD 100%); }
+            66% { background: linear-gradient(135deg, #0068B5 0%, #00C7FD 30%, #0068B5 70%, #00C7FD 100%); }
+        }
+        
+        .hero-ribbon {
+            width: 100%;
+            height: 200px;
+            background-image: url('/assets/Intel India.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(0, 104, 181, 0.3);
+        }
+        
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 104, 181, 0.8) 0%, rgba(0, 199, 253, 0.6) 100%);
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hero-text {
+            color: white;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .hero-text h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hero-text p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            padding: 0 20px 20px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 199, 253, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 104, 181, 0.15);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        h1 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .disclaimer-card {
+            background: rgba(255, 243, 205, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 25px 0;
+            color: #856404;
+            animation: slideInLeft 0.6s ease;
+            transition: all 0.3s ease;
+        }
+        
+        .disclaimer-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.2);
+        }
+        
+        .form-group {
+            margin: 25px 0;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            outline: none;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+        }
+        
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #0068B5, #00C7FD);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 104, 181, 0.3);
+        }
+        
+        button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover:before {
+            left: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+        
+        .status-card {
+            background: rgba(40, 167, 69, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            color: #fff;
+            animation: slideInLeft 0.5s ease;
+        }
+        
+        .error-card {
+            background: rgba(220, 53, 69, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            color: #fff;
+            animation: slideInLeft 0.5s ease;
+        }
+        
+        .bus-list {
+            margin-top: 30px;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        .bus-item {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .bus-item:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bus-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        
+        .bus-details {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+        
+        .availability {
+            font-weight: 600;
+            color: #4ade80;
+            font-size: 1rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Interactive elements */
+        .interactive-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(0, 104, 181, 0.1), rgba(0, 199, 253, 0.1));
+            border-radius: 50%;
+            border: 1px solid rgba(0, 199, 253, 0.2);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-shapes:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+        .floating-shapes:nth-child(2) { top: 60%; left: 80%; animation-delay: 2s; }
+        .floating-shapes:nth-child(3) { top: 40%; left: 60%; animation-delay: 4s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .bounce-in {
+            animation: bounceIn 0.6s ease;
+        }
+        
+        /* Success/Error animations */
+        .success-message {
+            border-left-color: #28a745 !important;
+            background: rgba(40, 167, 69, 0.15) !important;
+        }
+        
+        .error-message {
+            border-left-color: #dc3545 !important;
+            background: rgba(220, 53, 69, 0.15) !important;
+        }
+        
+        .info-message {
+            border-left-color: #17a2b8 !important;
+            background: rgba(23, 162, 184, 0.15) !important;
+        }
+        
+        /* Enhanced button states */
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .floating-shapes {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="interactive-bg">
+        <div class="floating-shapes"></div>
+        <div class="floating-shapes"></div>
+        <div class="floating-shapes"></div>
+    </div>
+    
+    <div class="container">
+        <div class="hero-ribbon">
+            <div class="hero-overlay">
+                <div class="hero-text">
+                    <h2>🚌 Intel India Employee Transportation</h2>
+                    <p>Smart Bus Booking System</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <h1 style="margin-top: 0;">Employee Bus Booking System</h1>
+        
+        <div class="disclaimer-card">
+            <h3 style="color: #dc3545; margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.5rem;">⚠️</span>
+                <span>IMPORTANT - Booking Attendance Disclaimer</span>
+            </h3>
+            <p><strong>Please note:</strong> Booking a slot on the bus does not imply or confirm your physical attendance at the office. Employees must follow the company's attendance policy independently to mark their presence at work.</p>
+            
+            <h4 style="color: #dc3545; margin-top: 15px; display: flex; align-items: center; gap: 8px;">
+                <span>📋</span>
+                <span>Departure Guidelines:</span>
+            </h4>
+            <ul style="margin: 15px 0; padding-left: 25px; line-height: 1.6;">
+                <li><strong>🕐 Be seated in the shuttle 10 minutes before departure</strong></li>
+                <li><strong>🔔 3:55 PM:</strong> First whistle – boarding closes soon</li>
+                <li><strong>🚌 4:00 PM:</strong> Final whistle – shuttle departs</li>
+                <li><strong>📍 Boarding/Drop Location:</strong> Use your designated site only</li>
+            </ul>
+            <p style="color: #dc3545; font-weight: bold; margin-top: 15px; padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 8px;">
+                ⚠️ Booking should adhere to above guidelines, else will be considered deemed cancelled.
+            </p>
+        </div>
+
+        <div class="form-group">
+            <label for="employee-id">👤 Employee ID (7-10 digits)</label>
+            <input type="text" id="employee-id" placeholder="Enter your employee ID" pattern="[0-9]{7,10}" maxlength="10">
+        </div>
+
+        <button onclick="checkEmployeeStatus()" id="check-btn">
+            <span id="btn-text">🔍 Check Bus Availability</span>
+            <span id="btn-loading" class="loading" style="display: none;"></span>
+        </button>
+        
+        <div id="result-area"></div>
+        
+        <!-- Bus Search Feature -->
+        <div id="search-section" style="display: none;">
+            <div class="form-group">
+                <label for="bus-search">🔍 Search Buses by Number or Route</label>
+                <input type="text" id="bus-search" placeholder="Search by bus number or route name..." onkeyup="filterBuses()">
+            </div>
+        </div>
+        
+        <div id="bus-list" class="bus-list"></div>
+        </div>
+    </div>    <script>
+        // Intel proxy compatible API calls
+        async function apiCall(endpoint) {
+            try {
+                const response = await fetch(`/api/${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest' // Intel proxy friendly
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                throw new Error(`API Error: ${error.message}`);
+            }
+        }
+
+
+
+        async function checkEmployeeStatus() {
+            const employeeId = document.getElementById('employee-id').value;
+            const checkBtn = document.getElementById('check-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnLoading = document.getElementById('btn-loading');
+            const input = document.getElementById('employee-id');
+            
+            if (!employeeId || employeeId.length < 7) {
+                showResult('❌ Please enter a valid Employee ID (7-10 digits)', 'error');
+                // Add shake animation to input
+                input.style.animation = 'none';
+                input.offsetHeight; // Trigger reflow
+                input.style.animation = 'shake 0.5s ease-in-out';
+                return;
+            }
+
+            // Show loading state
+            checkBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-block';
+
+            try {
+                showResult('🔍 Checking employee status and bus availability...', 'info');
+                
+                // First check if employee has any existing bookings
+                let hasExistingBooking = false;
+                let existingBooking = null;
+                
+                try {
+                    const bookingCheck = await apiCall(`employee/bookings/${employeeId}`);
+                    if (bookingCheck.status === 'success' && bookingCheck.has_booking && bookingCheck.data.length > 0) {
+                        hasExistingBooking = true;
+                        existingBooking = bookingCheck.data[0];
+                    }
+                } catch (error) {
+                    console.log('No existing booking found');
+                }
+                
+                // Get available buses
+                const buses = await apiCall('buses/available');
+                
+                if (buses.status === 'success' && buses.data) {
+                    displayBuses(buses.data, hasExistingBooking, existingBooking);
+                    
+                    if (hasExistingBooking) {
+                        const bookingList = existingBooking.map(booking => 
+                            `🚌 ${booking.bus_number} (${booking.slot || 'evening'} - ${booking.departure_time || '16:00'})`
+                        ).join(', ');
+                        
+                        showResult(`✅ Employee ${employeeId} - Current Bookings: ${bookingList}
+                        📅 Booking Date: ${existingBooking[0].schedule_date}
+                        ℹ️ You can book one morning and one evening slot per day`, 'info');
+                    } else {
+                        showResult(`✅ Employee ${employeeId} - No existing bookings found
+                        🚌 Select a bus below to make your booking (one morning + one evening slot allowed)`, 'success');
+                    }
+                } else {
+                    showResult('❌ No buses available', 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                // Reset button state
+                checkBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+            }
+        }
+
+        let allBuses = []; // Store all buses for filtering
+        
+        function displayBuses(buses, hasExistingBooking = false, existingBooking = null) {
+            allBuses = buses; // Store for search functionality
+            const busList = document.getElementById('bus-list');
+            const searchSection = document.getElementById('search-section');
+            
+            // Show search section when buses are displayed
+            searchSection.style.display = 'block';
+            
+            renderBusList(buses, hasExistingBooking, existingBooking);
+        }
+        
+        function renderBusList(buses, hasExistingBooking = false, existingBooking = null) {
+            const busList = document.getElementById('bus-list');
+            
+            if (buses.length === 0) {
+                busList.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">No buses found matching your search.</div>';
+                return;
+            }
+            
+            busList.innerHTML = '<h3 style="color: #fff; text-align: center; margin-bottom: 20px; font-size: 1.5rem;">🚌 Available Bus Routes</h3>';
+            
+            buses.forEach((bus, index) => {
+                const busItem = document.createElement('div');
+                busItem.className = 'bus-item';
+                busItem.style.animationDelay = `${index * 0.1}s`;
+                busItem.style.animation = 'fadeInUp 0.6s ease forwards';
+                busItem.style.opacity = '0';
+                
+                let buttonHtml = '';
+                let statusHtml = '';
+                
+                if (hasExistingBooking && existingBooking && existingBooking.bus_number === bus.bus_number) {
+                    // This bus is already booked by the employee
+                    statusHtml = '<div style="color: #fff; font-weight: bold; padding: 8px 12px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; margin: 10px 0; display: inline-block;">✅ YOUR CURRENT BOOKING</div>';
+                    buttonHtml = `<button onclick="cancelBooking('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #dc3545, #c82333); border-radius: 8px;">❌ Cancel Booking</button>`;
+                } else if (hasExistingBooking) {
+                    // Employee has booking on different bus - cannot book another
+                    statusHtml = '<div style="color: #fbbf24; font-weight: bold; padding: 8px 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; margin: 10px 0; display: inline-block;">⚠️ CANNOT BOOK - One booking per day limit</div>';
+                    buttonHtml = '<button disabled style="margin-top: 15px; background: linear-gradient(135deg, #6c757d, #545b62); opacity: 0.6; cursor: not-allowed;">🚫 Booking Limit Reached</button>';
+                } else {
+                    // No existing booking - can book this bus
+                    buttonHtml = `<button onclick="bookBus('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">📅 Book This Bus</button>`;
+                }
+
+                busItem.innerHTML = `
+                    <div class="bus-number">🚌 ${bus.bus_number}</div>
+                    <div class="bus-details">📍 Route: ${bus.route}</div>
+                    <div class="bus-details">� Departure: ${bus.departure_time || '16:00'}</div>
+                    <div class="bus-details">�👥 Capacity: ${bus.capacity} seats</div>
+                    <div class="availability" style="color: #fff; font-weight: bold;">✅ Available: ${bus.available_seats} seats</div>
+                    ${statusHtml}
+                    ${buttonHtml}
+                `;
+                busList.appendChild(busItem);
+            });
+        }
+        
+        function filterBuses() {
+            const searchTerm = document.getElementById('bus-search').value.toLowerCase();
+            const filteredBuses = allBuses.filter(bus => 
+                bus.bus_number.toLowerCase().includes(searchTerm) || 
+                bus.route.toLowerCase().includes(searchTerm)
+            );
+            
+            // Determine if we need to maintain booking state
+            const employeeId = document.getElementById('employee-id').value;
+            let hasExistingBooking = false;
+            let existingBooking = null;
+            
+            // Check if there's an existing booking (simplified check)
+            if (employeeId) {
+                // This is a simplified version - in practice you'd check against the stored state
+                renderBusList(filteredBuses, hasExistingBooking, existingBooking);
+            } else {
+                renderBusList(filteredBuses);
+            }
+        }        async function bookBus(busNumber) {
+            const employeeId = document.getElementById('employee-id').value;
+            if (!employeeId) {
+                showResult('❌ Please enter your Employee ID first', 'error');
+                return;
+            }
+            
+            try {
+                showResult(`🔄 Processing booking for ${busNumber} - Employee ${employeeId}...`, 'info');
+                
+                const bookingData = {
+                    employee_id: employeeId,
+                    bus_number: busNumber,
+                    schedule_date: new Date().toISOString().split('T')[0] // Today's date
+                };
+                
+                const response = await fetch('/api/booking/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(bookingData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showResult(`✅ BOOKING CONFIRMED!
+                    🎫 Booking ID: ${result.data.booking_id}
+                    🚌 Bus: ${result.data.bus_number}
+                    👤 Employee: ${result.data.employee_id} (${result.employee.name})
+                    📅 Date: ${result.data.schedule_date}
+                    ⏰ Time: ${result.data.created_at}
+                    📧 Email sent to: ${result.employee.email}
+                    
+                    ⚠️ IMPORTANT REMINDER: ${result.disclaimer}`, 'success');
+                    
+                    // Refresh the bus list to show updated status
+                    setTimeout(() => {
+                        checkEmployeeStatus();
+                    }, 2000);
+                } else {
+                    showResult(`❌ Booking Failed: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult(`❌ Booking Error: ${error.message}
+                🔧 Please check your connection and try again.`, 'error');
+            }
+        }
+        
+        async function cancelBooking(busNumber) {
+            const employeeId = document.getElementById('employee-id').value;
+            if (!employeeId) {
+                showResult('❌ Please enter your Employee ID first', 'error');
+                return;
+            }
+            
+            try {
+                showResult(`🔄 Cancelling booking for ${busNumber} - Employee ${employeeId}...`, 'info');
+                
+                const cancelData = {
+                    employee_id: employeeId,
+                    bus_number: busNumber
+                };
+                
+                const response = await fetch('/api/booking/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(cancelData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showResult(`✅ BOOKING CANCELLED SUCCESSFULLY!
+                    🚌 Bus: ${busNumber}
+                    👤 Employee: ${employeeId}
+                    ⏰ Cancelled at: ${new Date().toLocaleString()}
+                    
+                    ✨ You can now book a different bus if needed.`, 'success');
+                    
+                    // Refresh the bus list to show updated status
+                    setTimeout(() => {
+                        checkEmployeeStatus();
+                    }, 2000);
+                } else {
+                    showResult(`❌ Cancellation Failed: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult(`❌ Cancellation Error: ${error.message}
+                🔧 Please check your connection and try again.`, 'error');
+            }
+        }
+
+
+
+        function showResult(message, type) {
+            const resultArea = document.getElementById('result-area');
+            let className = 'status-card';
+            
+            if (type === 'error') {
+                className += ' error-message';
+            } else if (type === 'success') {
+                className += ' success-message';
+            } else if (type === 'info') {
+                className += ' info-message';
+            }
+            
+            resultArea.innerHTML = `<div class="${className} bounce-in"><p>${message}</p></div>`;
+            
+            // Scroll to result
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Bus Booking System loaded - Intel proxy compatible');
+            
+            // Add enter key support for employee ID input
+            const employeeInput = document.getElementById('employee-id');
+            employeeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    checkEmployeeStatus();
+                }
+            });
+            
+            // Add input validation feedback
+            employeeInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 7 && value.length <= 10 && /^\d+$/.test(value)) {
+                    e.target.style.borderColor = 'rgba(40, 167, 69, 0.4)';
+                } else if (value.length > 0) {
+                    e.target.style.borderColor = 'rgba(220, 53, 69, 0.4)';
+                } else {
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }
+            });
+            
+            // Add floating shapes interaction
+            const shapes = document.querySelectorAll('.floating-shapes');
+            shapes.forEach(shape => {
+                shape.addEventListener('mouseenter', () => {
+                    shape.style.transform = 'scale(1.2) translateY(-10px)';
+                    shape.style.transition = 'all 0.3s ease';
+                });
+                shape.addEventListener('mouseleave', () => {
+                    shape.style.transform = 'scale(1) translateY(0)';
+                });
+            });
+        });
+
+        // Test real-time updates with visual feedback
+        setInterval(() => {
+            if (document.getElementById('bus-list').children.length > 1) {
+                console.log('🔄 Real-time update check - Intel proxy bypassed');
+                // Add subtle pulse to indicate real-time activity
+                const container = document.querySelector('.container');
+                container.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.2)';
+                setTimeout(() => {
+                    container.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+                }, 1000);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

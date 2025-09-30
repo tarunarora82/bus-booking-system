@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test Debug</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing API connection...</p>';
+            
+            try {
+                // Test 1: Get buses
+                console.log('Testing get-buses API...');
+                const response = await fetch('http://localhost:3000/query-api.php?action=get-buses');
+                const data = await response.json();
+                
+                resultDiv.innerHTML += `<p><strong>✅ API Connection Success!</strong></p>`;
+                resultDiv.innerHTML += `<p>Status: ${data.status}</p>`;
+                resultDiv.innerHTML += `<p>Buses found: ${data.data ? data.data.length : 0}</p>`;
+                
+                // Test 2: Test booking creation
+                const bookingData = {
+                    action: 'create-booking',
+                    employee_id: 'DEBUG_TEST_123',
+                    bus_number: 'BUS001',
+                    schedule_date: '2025-09-30'
+                };
+                
+                const bookingResponse = await fetch('http://localhost:3000/query-api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const bookingResult = await bookingResponse.json();
+                resultDiv.innerHTML += `<p><strong>Booking Test:</strong> ${bookingResult.status}</p>`;
+                if (bookingResult.status === 'success') {
+                    resultDiv.innerHTML += `<p>Booking ID: ${bookingResult.booking.id}</p>`;
+                    resultDiv.innerHTML += `<p>Slot: ${bookingResult.booking.slot}</p>`;
+                } else {
+                    resultDiv.innerHTML += `<p>Error: ${bookingResult.message}</p>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p><strong>❌ API Connection Failed!</strong></p>`;
+                resultDiv.innerHTML += `<p>Error: ${error.message}</p>`;
+                console.error('API Test Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

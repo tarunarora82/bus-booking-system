@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Connectivity Test - Bus Booking System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c5aa0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f8f9fa;
+            border-left: 4px solid #ccc;
+        }
+        .test-item.testing {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-label {
+            font-weight: 600;
+            min-width: 200px;
+        }
+        .test-result {
+            flex: 1;
+            margin-left: 20px;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+        }
+        .success-icon {
+            background: #28a745;
+        }
+        .error-icon {
+            background: #dc3545;
+        }
+        .details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .proxy-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .proxy-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px auto;
+            display: block;
+        }
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        .network-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .detail-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .detail-card h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Network Connectivity Test</h1>
+        <p>This page tests connectivity to the Bus Booking System API through your corporate network/proxy.</p>
+        
+        <div id="test-results">
+            <!-- Test results will be populated here -->
+        </div>
+        
+        <button class="refresh-btn" onclick="runAllTests()">🔄 Run Tests Again</button>
+        
+        <div class="proxy-info">
+            <h3>📡 Network Information</h3>
+            <div class="network-details">
+                <div class="detail-card">
+                    <h4>Browser Info</h4>
+                    <div id="browser-info">Loading...</div>
+                </div>
+                <div class="detail-card">
+                    <h4>Connection Status</h4>
+                    <div id="connection-info">Loading...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="proxy-info">
+            <h3>🛠️ Troubleshooting</h3>
+            <ul>
+                <li><strong>API Health Failed</strong>: Check if Docker containers are running</li>
+                <li><strong>CORS Errors</strong>: Corporate proxy may be blocking API calls</li>
+                <li><strong>Timeout Errors</strong>: Network latency through corporate proxy</li>
+                <li><strong>All Tests Failed</strong>: Backend services may not be running</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const tests = [
+            {
+                name: 'API Health Check',
+                endpoint: '/api/health',
+                description: 'Basic API connectivity'
+            },
+            {
+                name: 'Bus Availability',
+                endpoint: '/api/buses/available',
+                description: 'Database connectivity through API'
+            },
+            {
+                name: 'CORS Headers',
+                endpoint: '/api/health',
+                description: 'Cross-origin request handling',
+                testCORS: true
+            },
+            {
+                name: 'API Response Time',
+                endpoint: '/api/health',
+                description: 'Network latency test',
+                measureTime: true
+            }
+        ];
+
+        async function runTest(test) {
+            const testElement = document.getElementById(`test-${test.name.replace(/\s+/g, '-')}`);
+            updateTestStatus(testElement, 'testing', 'Testing...');
+
+            try {
+                const startTime = performance.now();
+                
+                const response = await fetch(test.endpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    let resultText = '✅ Success';
+                    
+                    if (test.measureTime) {
+                        resultText += ` (${responseTime}ms)`;
+                    }
+                    
+                    if (test.testCORS) {
+                        const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                        resultText += ` - CORS: ${corsHeader || 'Not set'}`;
+                    }
+                    
+                    updateTestStatus(testElement, 'success', resultText, JSON.stringify(data, null, 2));
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                updateTestStatus(testElement, 'error', `❌ Failed: ${error.message}`);
+            }
+        }
+
+        function updateTestStatus(element, status, message, details = null) {
+            element.className = `test-item ${status}`;
+            
+            const icon = status === 'testing' ? '<div class="spinner"></div>' :
+                        status === 'success' ? '<div class="status-icon success-icon">✓</div>' :
+                        '<div class="status-icon error-icon">✗</div>';
+            
+            let html = `
+                ${icon}
+                <div class="test-label">${element.dataset.name}</div>
+                <div class="test-result">
+                    <div>${message}</div>
+                    <div class="details">${element.dataset.description}</div>
+                    ${details ? `<pre style="margin-top:10px;font-size:0.8em;background:#f1f1f1;padding:8px;border-radius:4px;overflow:auto;">${details}</pre>` : ''}
+                </div>
+            `;
+            
+            element.innerHTML = html;
+        }
+
+        function createTestElements() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '';
+            
+            tests.forEach(test => {
+                const testId = `test-${test.name.replace(/\s+/g, '-')}`;
+                const element = document.createElement('div');
+                element.id = testId;
+                element.className = 'test-item';
+                element.dataset.name = test.name;
+                element.dataset.description = test.description;
+                
+                element.innerHTML = `
+                    <div class="status-icon" style="background:#ccc;">⏳</div>
+                    <div class="test-label">${test.name}</div>
+                    <div class="test-result">
+                        <div>Ready to test</div>
+                        <div class="details">${test.description}</div>
+                    </div>
+                `;
+                
+                container.appendChild(element);
+            });
+        }
+
+        async function runAllTests() {
+            createTestElements();
+            
+            // Update network info
+            updateNetworkInfo();
+            
+            // Run tests sequentially to avoid overwhelming the server
+            for (const test of tests) {
+                await runTest(test);
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function updateNetworkInfo() {
+            // Browser info
+            const browserInfo = document.getElementById('browser-info');
+            browserInfo.innerHTML = `
+                <strong>User Agent:</strong><br>
+                <small>${navigator.userAgent}</small><br><br>
+                <strong>Language:</strong> ${navigator.language}<br>
+                <strong>Online:</strong> ${navigator.onLine ? '✅ Yes' : '❌ No'}<br>
+                <strong>Cookies Enabled:</strong> ${navigator.cookieEnabled ? '✅ Yes' : '❌ No'}
+            `;
+            
+            // Connection info
+            const connectionInfo = document.getElementById('connection-info');
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            
+            let connDetails = `<strong>Status:</strong> ${navigator.onLine ? 'Online' : 'Offline'}<br>`;
+            
+            if (connection) {
+                connDetails += `
+                    <strong>Type:</strong> ${connection.effectiveType || 'Unknown'}<br>
+                    <strong>Downlink:</strong> ${connection.downlink || 'Unknown'} Mbps<br>
+                    <strong>RTT:</strong> ${connection.rtt || 'Unknown'} ms
+                `;
+            } else {
+                connDetails += '<strong>Connection API:</strong> Not supported';
+            }
+            
+            connectionInfo.innerHTML = connDetails;
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runAllTests);
+        
+        // Monitor network status
+        window.addEventListener('online', () => {
+            console.log('Network came online');
+            updateNetworkInfo();
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('Network went offline');
+            updateNetworkInfo();
+        });
+    </script>
+</body>
+</html>

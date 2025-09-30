@@ -1,0 +1,43 @@
+[
+    {
+        "id": "11453732",
+        "name": "John Doe",
+        "department": "Engineering",
+        "email": "john.doe@intel.com"
+    },
+    {
+        "id": "11453733",
+        "name": "Jane Smith",
+        "department": "Marketing",
+        "email": "jane.smith@intel.com"
+    },
+    {
+        "id": "11453734",
+        "name": "Bob Johnson",
+        "department": "HR",
+        "email": "bob.johnson@intel.com"
+    },
+    {
+        "id": "11453735",
+        "name": "Alice Brown",
+        "department": "Finance",
+        "email": "alice.brown@intel.com"
+    },
+    {
+        "id": null,
+        "name": null,
+        "department": null,
+        "email": null
+    },
+    {
+        "id": "TEST001",
+        "name": "Test Employee",
+        "department": null,
+        "email": "test@intel.com"
+    },
+    {
+        "id": "11453731",
+        "name": "ankita ARORA",
+        "email": "tarun.arora@intel.com"
+    }
+]

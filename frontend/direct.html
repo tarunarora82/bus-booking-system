@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking System - Direct Access</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .schedule { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .schedule h3 { margin: 0 0 10px 0; color: #333; }
+        .schedule-info { display: flex; justify-content: space-between; align-items: center; }
+        .book-btn { background: #007bff; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .book-btn:hover { background: #0056b3; }
+        .input-group { margin: 15px 0; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 200px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .check-btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .check-btn:hover { background: #218838; }
+        .hidden { display: none; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 Bus Booking System</h1>
+        <p>Direct access version - works without API calls</p>
+        
+        <div class="input-group">
+            <label for="workerId">Worker ID:</label>
+            <input type="text" id="workerId" placeholder="Enter your 7-digit Worker ID" />
+            <button class="check-btn" onclick="checkStatus()">Check Status</button>
+        </div>
+        
+        <div id="error-msg" class="error hidden"></div>
+        <div id="success-msg" class="success hidden"></div>
+        
+        <div id="schedules-container" class="hidden">
+            <h2>Available Schedules</h2>
+            
+            <div class="schedule">
+                <h3>Morning Shift - Bus A</h3>
+                <div class="schedule-info">
+                    <div>
+                        <p><strong>Time:</strong> 08:00 - 18:00</p>
+                        <p><strong>Route:</strong> City Center to Industrial Park</p>
+                        <p><strong>Available Seats:</strong> 32/45</p>
+                    </div>
+                    <button class="book-btn" onclick="bookSlot(1, 'Morning Shift - Bus A')">Book Slot</button>
+                </div>
+            </div>
+            
+            <div class="schedule">
+                <h3>Evening Shift - Bus B</h3>
+                <div class="schedule-info">
+                    <div>
+                        <p><strong>Time:</strong> 18:30 - 04:30</p>
+                        <p><strong>Route:</strong> Industrial Park to City Center</p>
+                        <p><strong>Available Seats:</strong> 28/45</p>
+                    </div>
+                    <button class="book-btn" onclick="bookSlot(2, 'Evening Shift - Bus B')">Book Slot</button>
+                </div>
+            </div>
+            
+            <div class="schedule">
+                <h3>Night Shift - Bus C</h3>
+                <div class="schedule-info">
+                    <div>
+                        <p><strong>Time:</strong> 22:00 - 08:00</p>
+                        <p><strong>Route:</strong> City Center to Industrial Park</p>
+                        <p><strong>Available Seats:</strong> 15/40</p>
+                    </div>
+                    <button class="book-btn" onclick="bookSlot(3, 'Night Shift - Bus C')">Book Slot</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            const workerId = document.getElementById('workerId').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            const schedulesContainer = document.getElementById('schedules-container');
+            
+            // Hide previous messages
+            errorMsg.classList.add('hidden');
+            successMsg.classList.add('hidden');
+            schedulesContainer.classList.add('hidden');
+            
+            // Validate Worker ID
+            if (!workerId) {
+                errorMsg.textContent = 'Please enter your Worker ID';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            
+            if (workerId.length < 7) {
+                errorMsg.textContent = 'Worker ID must be at least 7 characters long';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            
+            // Simulate successful validation
+            successMsg.textContent = `Welcome, Worker ${workerId}! Here are today's available bus schedules:`;
+            successMsg.classList.remove('hidden');
+            schedulesContainer.classList.remove('hidden');
+        }
+        
+        function bookSlot(scheduleId, scheduleName) {
+            const workerId = document.getElementById('workerId').value.trim();
+            
+            if (confirm(`Confirm booking for ${scheduleName}?\nWorker ID: ${workerId}`)) {
+                alert(`✅ Booking confirmed!\n\nSchedule: ${scheduleName}\nWorker ID: ${workerId}\nBooking ID: BK${Date.now()}\n\nPlease save this information for your records.`);
+            }
+        }
+    </script>
+</body>
+</html>

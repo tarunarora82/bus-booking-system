@@ -1,0 +1,7 @@
+Bus Number,Route,Capacity,Departure Time,Slot
+BUS005,Yeshwanthpur - Electronic City Express,45,08:00,morning
+BUS005,Yeshwanthpur - Electronic City Express,45,16:00,evening
+BUS006,JP Nagar - Sarjapur Road Direct,50,08:15,morning
+BUS006,JP Nagar - Sarjapur Road Direct,50,16:15,evening
+BUS007,Hebbal - Marathahalli Tech Corridor,40,08:30,morning
+BUS007,Hebbal - Marathahalli Tech Corridor,40,16:30,evening
