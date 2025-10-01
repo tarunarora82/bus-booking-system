@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Production System Verification</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .pass { color: #28a745; font-weight: bold; }
+        .fail { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .info { color: #17a2b8; }
+        button { 
+            padding: 10px 15px; 
+            margin: 5px; 
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .result-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 30px;
+            background: #f8f9fa;
+            border-left: 4px solid #dee2e6;
+        }
+        .architecture-info {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .api-table th, .api-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .api-table th {
+            background: #f8f9fa;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Production Bus Booking System Verification</h1>
+        <p class="info">Testing unified production API endpoint: <code>/api/production-api.php</code></p>
+        
+        <div class="architecture-info">
+            <h3>🏗️ System Architecture</h3>
+            <p><strong>Production API:</strong> Single unified endpoint replacing all duplicate APIs</p>
+            <p><strong>Data Flow:</strong> Frontend → nginx → PHP-FPM → production-api.php → JSON Storage</p>
+            <p><strong>Archived APIs:</strong> All duplicate files moved to <code>dev-resources/archived-apis/</code></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 API Health Check</h3>
+            <button onclick="testHealth()">Test API Health</button>
+            <div id="health-result" class="result-box"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🚌 Bus Availability Test</h3>
+            <button onclick="testBuses()">Test Available Buses</button>
+            <div id="buses-result" class="result-box"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👤 Employee Booking Test</h3>
+            <button onclick="testEmployee()">Test Employee Lookup</button>
+            <div id="employee-result" class="result-box"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Booking Flow Test</h3>
+            <button onclick="testBookingFlow()">Test Create & Cancel Booking</button>
+            <div id="booking-result" class="result-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⚙️ Admin Functions Test</h3>
+            <button onclick="testAdminFunctions()">Test Admin API</button>
+            <div id="admin-result" class="result-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 Backward Compatibility Test</h3>
+            <button onclick="testBackwardCompatibility()">Test Legacy API Calls</button>
+            <div id="legacy-result" class="result-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Complete System Test</h3>
+            <button onclick="runAllTests()" style="background: #28a745;">Run All Tests</button>
+            <button onclick="clearResults()" style="background: #6c757d;">Clear Results</button>
+            <div id="summary-result" class="result-box"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = '/api';
+        let testResults = {};
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            if (data) config.body = JSON.stringify(data);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+                const result = await response.json();
+                return { success: response.ok, data: result, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function legacyApiCall(action, params = {}) {
+            const url = new URL(`${API_BASE_URL}/production-api.php`, window.location.origin);
+            url.searchParams.append('action', action);
+            
+            Object.keys(params).forEach(key => {
+                url.searchParams.append(key, params[key]);
+            });
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                return { success: response.ok, data: result, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testHealth() {
+            const result = await apiCall('health');
+            const resultDiv = document.getElementById('health-result');
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <span class="pass">✅ API Health: ${result.data.message}</span><br>
+                    <small class="info">Version: ${result.data.version} | Timestamp: ${result.data.timestamp}</small>
+                `;
+                testResults.health = true;
+            } else {
+                resultDiv.innerHTML = `<span class="fail">❌ Health Check Failed: ${result.error || result.data?.message}</span>`;
+                testResults.health = false;
+            }
+        }
+        
+        async function testBuses() {
+            const result = await apiCall('buses/available');
+            const resultDiv = document.getElementById('buses-result');
+            
+            if (result.success && result.data.data) {
+                const buses = result.data.data;
+                resultDiv.innerHTML = `
+                    <span class="pass">✅ Found ${buses.length} buses</span><br>
+                    <table class="api-table">
+                        <tr><th>Bus Number</th><th>Route</th><th>Capacity</th><th>Available</th></tr>
+                        ${buses.map(bus => `
+                            <tr>
+                                <td>${bus.bus_number}</td>
+                                <td>${bus.route}</td>
+                                <td>${bus.capacity}</td>
+                                <td>${bus.available_seats}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                `;
+                testResults.buses = true;
+            } else {
+                resultDiv.innerHTML = `<span class="fail">❌ Bus Data Failed: ${result.error || result.data?.message}</span>`;
+                testResults.buses = false;
+            }
+        }
+        
+        async function testEmployee() {
+            const testEmployeeId = '11453732';
+            const testDate = '2025-10-01';
+            const result = await apiCall(`employee/bookings/${testEmployeeId}?date=${testDate}`);
+            const resultDiv = document.getElementById('employee-result');
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <span class="pass">✅ Employee API Working</span><br>
+                    <span class="info">Employee ${testEmployeeId}: ${result.data.message}</span><br>
+                    <span class="info">Has Booking: ${result.data.has_booking ? 'Yes' : 'No'}</span>
+                `;
+                testResults.employee = true;
+            } else {
+                resultDiv.innerHTML = `<span class="fail">❌ Employee Test Failed: ${result.error || result.data?.message}</span>`;
+                testResults.employee = false;
+            }
+        }
+        
+        async function testBookingFlow() {
+            const resultDiv = document.getElementById('booking-result');
+            const testData = {
+                employee_id: 'TEST' + Date.now(),
+                bus_number: 'BUS001',
+                schedule_date: '2025-10-01'
+            };
+            
+            try {
+                // Test create booking
+                const createResult = await apiCall('booking/create', 'POST', testData);
+                
+                if (!createResult.success) {
+                    resultDiv.innerHTML = `<span class="fail">❌ Create Booking Failed: ${createResult.error || createResult.data?.message}</span>`;
+                    testResults.booking = false;
+                    return;
+                }
+                
+                // Test cancel booking
+                const cancelResult = await apiCall('booking/cancel', 'POST', testData);
+                
+                if (cancelResult.success) {
+                    resultDiv.innerHTML = `
+                        <span class="pass">✅ Booking Flow Working</span><br>
+                        <span class="info">✓ Create: ${createResult.data.message}</span><br>
+                        <span class="info">✓ Cancel: ${cancelResult.data.message}</span>
+                    `;
+                    testResults.booking = true;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="warning">⚠️ Partial Success</span><br>
+                        <span class="pass">✓ Create: ${createResult.data.message}</span><br>
+                        <span class="fail">✗ Cancel: ${cancelResult.error || cancelResult.data?.message}</span>
+                    `;
+                    testResults.booking = false;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="fail">❌ Booking Flow Error: ${error.message}</span>`;
+                testResults.booking = false;
+            }
+        }
+
+        async function testAdminFunctions() {
+            const resultDiv = document.getElementById('admin-result');
+            
+            try {
+                // Test admin bookings
+                const bookingsResult = await legacyApiCall('admin-bookings');
+                
+                // Test admin settings
+                const settingsResult = await legacyApiCall('admin-settings');
+                
+                if (bookingsResult.success && settingsResult.success) {
+                    resultDiv.innerHTML = `
+                        <span class="pass">✅ Admin Functions Working</span><br>
+                        <span class="info">✓ Admin Bookings: ${bookingsResult.data.message}</span><br>
+                        <span class="info">✓ Admin Settings: Available</span>
+                    `;
+                    testResults.admin = true;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="warning">⚠️ Admin Functions Partial</span><br>
+                        <span class="info">Bookings: ${bookingsResult.success ? '✓' : '✗'}</span><br>
+                        <span class="info">Settings: ${settingsResult.success ? '✓' : '✗'}</span>
+                    `;
+                    testResults.admin = false;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="fail">❌ Admin Test Error: ${error.message}</span>`;
+                testResults.admin = false;
+            }
+        }
+
+        async function testBackwardCompatibility() {
+            const resultDiv = document.getElementById('legacy-result');
+            
+            try {
+                // Test legacy health check
+                const healthResult = await legacyApiCall('health-check');
+                
+                // Test legacy available buses
+                const busesResult = await legacyApiCall('available-buses');
+                
+                if (healthResult.success && busesResult.success) {
+                    resultDiv.innerHTML = `
+                        <span class="pass">✅ Backward Compatibility Working</span><br>
+                        <span class="info">✓ Legacy health-check: ${healthResult.data.message}</span><br>
+                        <span class="info">✓ Legacy available-buses: ${busesResult.data.data.length} buses found</span>
+                    `;
+                    testResults.legacy = true;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="fail">❌ Backward Compatibility Issues</span><br>
+                        <span class="info">Health: ${healthResult.success ? '✓' : '✗'}</span><br>
+                        <span class="info">Buses: ${busesResult.success ? '✓' : '✗'}</span>
+                    `;
+                    testResults.legacy = false;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="fail">❌ Legacy Test Error: ${error.message}</span>`;
+                testResults.legacy = false;
+            }
+        }
+
+        async function runAllTests() {
+            const summaryDiv = document.getElementById('summary-result');
+            summaryDiv.innerHTML = '<span class="info">🔄 Running all tests...</span>';
+            
+            testResults = {};
+            
+            await testHealth();
+            await testBuses();
+            await testEmployee();
+            await testBookingFlow();
+            await testAdminFunctions();
+            await testBackwardCompatibility();
+            
+            // Generate summary
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result === true).length;
+            const failedTests = totalTests - passedTests;
+            
+            const summaryClass = failedTests === 0 ? 'pass' : (passedTests > failedTests ? 'warning' : 'fail');
+            
+            summaryDiv.innerHTML = `
+                <h4>📊 Test Summary</h4>
+                <span class="${summaryClass}">
+                    ${failedTests === 0 ? '🎉 All Tests Passed!' : 
+                      passedTests > failedTests ? '⚠️ Most Tests Passed' : '❌ Major Issues Found'}
+                </span><br>
+                <span class="info">Passed: ${passedTests}/${totalTests} | Failed: ${failedTests}/${totalTests}</span><br>
+                <span class="info">Production Readiness: ${failedTests === 0 ? '✅ Ready' : '⚠️ Needs Attention'}</span>
+            `;
+        }
+
+        function clearResults() {
+            const resultDivs = document.querySelectorAll('.result-box');
+            resultDivs.forEach(div => div.innerHTML = '');
+            testResults = {};
+        }
+        
+        // Auto-run health check on page load
+        window.onload = () => {
+            setTimeout(testHealth, 1000);
+        };
+    </script>
+</body>
+</html>

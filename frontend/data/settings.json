@@ -1,0 +1,8 @@
+{
+    "smtp_host": "smtpauth.intel.com",
+    "smtp_port": "587",
+    "smtp_user": "noreply@intel.com",
+    "booking_cutoff": "15",
+    "max_advance_days": "1",
+    "real_time_interval": "5"
+}

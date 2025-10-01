@@ -1,53 +1,18 @@
-# Simple working nginx configurationserver {server {
-
 server {
-
-    listen 80;    listen 80;    listen 80;
-
+    listen 80;
     server_name localhost;
+    root /var/www/html;
+    index index.html index.php;
 
-    root /var/www/html;    server_name localhost;    server_name localhost;
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline' 'unsafe-eval'" always;
 
-    index index.html;
-
-    root /var/www/html;    root /var/www/html;
-
+    # Frontend routes
     location / {
-
-        try_files $uri $uri/ /index.html;    index index.html index.php;    index index.html index.php;
-
-    }
-
-
-
-    location /api/ {
-
-        try_files $uri @api;    # Main application route    # Security headers
-
-    }
-
-    location / {    add_header X-Frame-Options "SAMEORIGIN" always;
-
-    location @api {
-
-        fastcgi_pass php:9000;        try_files $uri $uri/ /index.html;    add_header X-XSS-Protection "1; mode=block" always;
-
-        include fastcgi_params;
-
-        fastcgi_param SCRIPT_FILENAME /var/www/html/api$fastcgi_script_name;    }    add_header X-Content-Type-Options "nosniff" always;
-
-        fastcgi_param DOCUMENT_ROOT /var/www/html/api;
-
-    }    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-
-}
-    # API routes    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
-
-    location /api/ {
-
-        try_files $uri @php;    # Frontend routes
-
-    }    location / {
 
         try_files $uri $uri/ /index.html;
 

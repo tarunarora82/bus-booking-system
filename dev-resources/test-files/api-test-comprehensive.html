@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Bus Booking Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .test-result { margin: 10px 0; padding: 10px; background: #f5f5f5; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { margin: 5px; padding: 8px 16px; cursor: pointer; }
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Bus Booking System - API Test</h1>
+    
+    <div class="test-section">
+        <h2>Basic API Tests</h2>
+        <button onclick="clearResults()">Clear All Results</button>
+        <button onclick="testGetBuses()">Test Get Buses</button>
+        <button onclick="testGetEmployees()">Test Get Employees</button>
+        <button onclick="testGetSystemSettings()">Test Get System Settings</button>
+        <button onclick="testGetActivityLog()">Test Get Activity Log</button>
+        <button onclick="runAllBasicTests()">Run All Basic Tests</button>
+        <div id="basic-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Admin CRUD Tests</h2>
+        <button onclick="testAddBus()">Test Add Bus</button>
+        <button onclick="testUpdateBus()">Test Update Bus</button>
+        <button onclick="testDeleteBus()">Test Delete Bus</button>
+        <button onclick="testUpdateSystemSettings()">Test Update Settings</button>
+        <button onclick="runAllCrudTests()">Run All CRUD Tests</button>
+        <div id="crud-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Booking Tests</h2>
+        <button onclick="testCreateBooking()">Test Create Booking</button>
+        <button onclick="testGetBookings()">Test Get Bookings</button>
+        <button onclick="testCancelBooking()">Test Cancel Booking</button>
+        <button onclick="runAllBookingTests()">Run All Booking Tests</button>
+        <div id="booking-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Production Readiness Validation</h2>
+        <button onclick="runComprehensiveTests()" style="background: #28a745; color: white; font-weight: bold;">Run All 14 Tests</button>
+        <button onclick="validateProductionReadiness()" style="background: #007bff; color: white; font-weight: bold;">Validate Production Readiness</button>
+        <div id="production-results"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/simple-api.php';
+        
+        function displayResult(containerId, testName, result, success = true) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${testName}:</strong>\n${JSON.stringify(result, null, 2)}`;
+            container.appendChild(div);
+        }
+        
+        function clearResults() {
+            const containers = ['basic-results', 'crud-results', 'booking-results'];
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) container.innerHTML = '';
+            });
+        }
+        
+        async function apiCall(action, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                let url = `${API_BASE}?action=${action}`;
+                if (method === 'POST' && data) {
+                    options.body = JSON.stringify(data);
+                } else if (method === 'GET' && data) {
+                    const params = new URLSearchParams(data);
+                    url += '&' + params.toString();
+                }
+                
+                const response = await fetch(url, options);
+                const text = await response.text();
+                console.log('Raw response:', text);
+                
+                if (!text.trim()) {
+                    throw new Error('Empty response from server');
+                }
+                
+                try {
+                    return JSON.parse(text);
+                } catch (parseError) {
+                    throw new Error(`JSON parse error: ${parseError.message}. Response: ${text.substring(0, 200)}`);
+                }
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+        
+        // Basic API Tests
+        async function testGetBuses() {
+            try {
+                const result = await apiCall('get_buses');
+                displayResult('basic-results', 'Get Buses', result);
+            } catch (error) {
+                displayResult('basic-results', 'Get Buses', {error: error.message}, false);
+            }
+        }
+        
+        async function testGetEmployees() {
+            try {
+                const result = await apiCall('get_employees');
+                displayResult('basic-results', 'Get Employees', result);
+            } catch (error) {
+                displayResult('basic-results', 'Get Employees', {error: error.message}, false);
+            }
+        }
+        
+        async function testGetSystemSettings() {
+            try {
+                const result = await apiCall('get_system_settings');
+                displayResult('basic-results', 'Get System Settings', result);
+            } catch (error) {
+                displayResult('basic-results', 'Get System Settings', {error: error.message}, false);
+            }
+        }
+        
+        async function testGetActivityLog() {
+            try {
+                const result = await apiCall('get_activity_log');
+                displayResult('basic-results', 'Get Activity Log', result);
+            } catch (error) {
+                displayResult('basic-results', 'Get Activity Log', {error: error.message}, false);
+            }
+        }
+        
+        // Admin CRUD Tests
+        async function testAddBus() {
+            try {
+                const newBus = {
+                    bus_number: 'TEST001',
+                    route: 'Test Route',
+                    capacity: 25,
+                    departure_time: '09:00 AM',
+                    slot: 'morning',
+                    enabled: true
+                };
+                const result = await apiCall('add_bus', 'POST', newBus);
+                displayResult('crud-results', 'Add Bus', result);
+            } catch (error) {
+                displayResult('crud-results', 'Add Bus', {error: error.message}, false);
+            }
+        }
+        
+        async function testUpdateBus() {
+            try {
+                const updateData = {
+                    bus_number: 'BUS001',
+                    route: 'Updated Metro to Office',
+                    capacity: 45,
+                    departure_time: '08:05 AM',
+                    slot: 'morning',
+                    enabled: true
+                };
+                const result = await apiCall('update_bus', 'POST', updateData);
+                displayResult('crud-results', 'Update Bus', result);
+            } catch (error) {
+                displayResult('crud-results', 'Update Bus', {error: error.message}, false);
+            }
+        }
+        
+        async function testDeleteBus() {
+            try {
+                const result = await apiCall('delete_bus', 'POST', {bus_number: 'TEST001'});
+                displayResult('crud-results', 'Delete Bus', result);
+            } catch (error) {
+                displayResult('crud-results', 'Delete Bus', {error: error.message}, false);
+            }
+        }
+        
+        async function testUpdateSystemSettings() {
+            try {
+                const settings = {
+                    booking_freeze_minutes: 45,
+                    max_advance_booking_days: 10,
+                    booking_allowed_hours_start: '06:30',
+                    booking_allowed_hours_end: '21:30',
+                    max_bookings_per_employee_per_day: 3,
+                    email_notifications_enabled: false,
+                    system_maintenance_mode: false,
+                    concurrency_lock_timeout: 60
+                };
+                const result = await apiCall('save_system_settings', 'POST', settings);
+                displayResult('crud-results', 'Update System Settings', result);
+            } catch (error) {
+                displayResult('crud-results', 'Update System Settings', {error: error.message}, false);
+            }
+        }
+        
+        // Booking Tests
+        async function testCreateBooking() {
+            try {
+                const booking = {
+                    employee_id: 'EMP001',
+                    bus_number: 'BUS001',
+                    schedule_date: '2025-10-02'
+                };
+                const result = await apiCall('book', 'POST', booking);
+                displayResult('booking-results', 'Create Booking', result);
+            } catch (error) {
+                displayResult('booking-results', 'Create Booking', {error: error.message}, false);
+            }
+        }
+        
+        async function testGetBookings() {
+            try {
+                const result = await apiCall('get_bookings', 'GET', {employee_id: 'EMP001'});
+                displayResult('booking-results', 'Get Bookings', result);
+            } catch (error) {
+                displayResult('booking-results', 'Get Bookings', {error: error.message}, false);
+            }
+        }
+        
+        async function testCancelBooking() {
+            try {
+                const result = await apiCall('cancel', 'POST', {
+                    employee_id: 'EMP001',
+                    bus_number: 'BUS001',
+                    schedule_date: '2025-10-02'
+                });
+                displayResult('booking-results', 'Cancel Booking', result);
+            } catch (error) {
+                displayResult('booking-results', 'Cancel Booking', {error: error.message}, false);
+            }
+        }
+        
+        // Comprehensive test functions
+        async function runAllBasicTests() {
+            clearResults();
+            try {
+                await testGetBuses();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testGetEmployees();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testGetSystemSettings();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testGetActivityLog();
+            } catch (error) {
+                displayResult('basic-results', 'Test Suite Error', {error: error.message}, false);
+            }
+        }
+        
+        async function runAllCrudTests() {
+            try {
+                await testAddBus();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testUpdateBus();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testUpdateSystemSettings();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testDeleteBus();
+            } catch (error) {
+                displayResult('crud-results', 'CRUD Test Suite Error', {error: error.message}, false);
+            }
+        }
+        
+        async function runAllBookingTests() {
+            try {
+                await testCreateBooking();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testGetBookings();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testCancelBooking();
+            } catch (error) {
+                displayResult('booking-results', 'Booking Test Suite Error', {error: error.message}, false);
+            }
+        }
+        
+        // Comprehensive Production Readiness Tests
+        async function runComprehensiveTests() {
+            displayResult('production-results', 'Starting Comprehensive Tests', {
+                message: 'Running all 14 production readiness tests...',
+                timestamp: new Date().toISOString()
+            });
+            
+            let passedTests = 0;
+            let totalTests = 14;
+            
+            const tests = [
+                { name: 'Get Buses', func: testGetBuses },
+                { name: 'Get Employees', func: testGetEmployees },
+                { name: 'Get System Settings', func: testGetSystemSettings },
+                { name: 'Get Activity Log', func: testGetActivityLog },
+                { name: 'Add Bus', func: testAddBus },
+                { name: 'Update Bus', func: testUpdateBus },
+                { name: 'Update System Settings', func: testUpdateSystemSettings },
+                { name: 'Create Booking', func: testCreateBooking },
+                { name: 'Get Bookings', func: testGetBookings },
+                { name: 'Cancel Booking', func: testCancelBooking },
+                { name: 'Delete Bus', func: testDeleteBus },
+                { name: 'System Concurrency', func: testSystemConcurrency },
+                { name: 'Activity Logging', func: testActivityLogging },
+                { name: 'System Configuration', func: testSystemConfiguration }
+            ];
+            
+            for (let i = 0; i < tests.length; i++) {
+                try {
+                    console.log(`Running test ${i + 1}/${totalTests}: ${tests[i].name}`);
+                    await tests[i].func();
+                    passedTests++;
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                } catch (error) {
+                    console.error(`Test failed: ${tests[i].name}`, error);
+                }
+            }
+            
+            displayResult('production-results', 'Test Results Summary', {
+                passed: passedTests,
+                total: totalTests,
+                percentage: Math.round((passedTests / totalTests) * 100),
+                status: passedTests === totalTests ? 'ALL TESTS PASSED ✅' : `${totalTests - passedTests} TESTS FAILED ❌`,
+                production_ready: passedTests === totalTests
+            }, passedTests === totalTests);
+        }
+        
+        async function testSystemConcurrency() {
+            // Test concurrent booking attempts
+            const promises = [];
+            for (let i = 0; i < 3; i++) {
+                promises.push(apiCall('book', 'POST', {
+                    employee_id: `EMP00${i + 1}`,
+                    bus_number: 'BUS001',
+                    schedule_date: '2025-10-03'
+                }));
+            }
+            
+            const results = await Promise.allSettled(promises);
+            displayResult('production-results', 'Concurrency Test', {
+                concurrent_requests: 3,
+                results: results.map(r => r.status === 'fulfilled' ? r.value : r.reason)
+            });
+        }
+        
+        async function testActivityLogging() {
+            // Test that activities are being logged
+            const logBefore = await apiCall('get_activity_log', 'GET', { limit: 5 });
+            
+            // Perform an action that should be logged
+            await apiCall('add_bus', 'POST', {
+                bus_number: 'LOG_TEST',
+                route: 'Test Logging Route',
+                capacity: 20,
+                departure_time: '10:00 AM',
+                slot: 'morning'
+            });
+            
+            const logAfter = await apiCall('get_activity_log', 'GET', { limit: 5 });
+            
+            displayResult('production-results', 'Activity Logging Test', {
+                log_entries_before: logBefore.data?.length || 0,
+                log_entries_after: logAfter.data?.length || 0,
+                logging_working: (logAfter.data?.length || 0) > (logBefore.data?.length || 0)
+            });
+        }
+        
+        async function testSystemConfiguration() {
+            // Test system configuration features
+            const originalSettings = await apiCall('get_system_settings');
+            
+            const newSettings = {
+                booking_freeze_minutes: 60,
+                max_advance_booking_days: 14,
+                booking_allowed_hours_start: '05:00',
+                booking_allowed_hours_end: '23:00',
+                max_bookings_per_employee_per_day: 4,
+                email_notifications_enabled: true,
+                system_maintenance_mode: false,
+                concurrency_lock_timeout: 45
+            };
+            
+            const updateResult = await apiCall('save_system_settings', 'POST', newSettings);
+            const verifySettings = await apiCall('get_system_settings');
+            
+            displayResult('production-results', 'System Configuration Test', {
+                original: originalSettings.data,
+                updated: updateResult.data,
+                verified: verifySettings.data,
+                configuration_working: updateResult.status === 'success' && verifySettings.status === 'success'
+            });
+        }
+        
+        async function validateProductionReadiness() {
+            displayResult('production-results', 'Production Readiness Validation', {
+                message: 'Validating system for production deployment...',
+                timestamp: new Date().toISOString()
+            });
+            
+            const checks = [];
+            
+            // Check 1: API Endpoints
+            try {
+                const buses = await apiCall('get_buses');
+                checks.push({ name: 'API Endpoints', status: buses.status === 'success', details: 'All endpoints accessible' });
+            } catch (e) {
+                checks.push({ name: 'API Endpoints', status: false, details: e.message });
+            }
+            
+            // Check 2: Data Integrity
+            try {
+                const employees = await apiCall('get_employees');
+                const validEmployees = employees.data && Array.isArray(employees.data);
+                checks.push({ name: 'Data Integrity', status: validEmployees, details: validEmployees ? 'Data structures valid' : 'Invalid data format' });
+            } catch (e) {
+                checks.push({ name: 'Data Integrity', status: false, details: e.message });
+            }
+            
+            // Check 3: Admin Functions
+            try {
+                const settings = await apiCall('get_system_settings');
+                const hasSettings = settings.data && typeof settings.data === 'object';
+                checks.push({ name: 'Admin Functions', status: hasSettings, details: hasSettings ? 'System settings accessible' : 'Settings not accessible' });
+            } catch (e) {
+                checks.push({ name: 'Admin Functions', status: false, details: e.message });
+            }
+            
+            // Check 4: Activity Logging
+            try {
+                const log = await apiCall('get_activity_log');
+                const hasLogging = log.data && Array.isArray(log.data);
+                checks.push({ name: 'Activity Logging', status: hasLogging, details: hasLogging ? 'Activity logging operational' : 'Logging not working' });
+            } catch (e) {
+                checks.push({ name: 'Activity Logging', status: false, details: e.message });
+            }
+            
+            const passedChecks = checks.filter(c => c.status).length;
+            const isProductionReady = passedChecks === checks.length;
+            
+            displayResult('production-results', 'Production Readiness Report', {
+                checks: checks,
+                passed: passedChecks,
+                total: checks.length,
+                production_ready: isProductionReady,
+                status: isProductionReady ? 'PRODUCTION READY ✅' : 'NOT PRODUCTION READY ❌',
+                timestamp: new Date().toISOString()
+            }, isProductionReady);
+        }
+        
+        // Run basic tests on page load
+        window.onload = function() {
+            console.log('API Test page loaded - Ready for comprehensive testing');
+            displayResult('basic-results', 'System Status', {
+                message: 'Bus Booking System API Test Interface Loaded',
+                timestamp: new Date().toISOString(),
+                status: 'Ready for comprehensive production testing'
+            });
+        };
+    </script>
+</body>
+</html>

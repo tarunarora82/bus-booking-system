@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intel Transportation - Bus Booking System</title>
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVFiFtZdNaFxVFMd/585782YmM5kkTdI0H7VJP1JbW6u1FqpWF4qCuHDhQheCCxe6cOPChQsXLly4cOFCXLhw4UKwuBBcuHDhwpULF1pBW6u1tZ+1bZqmTZrJTGYy837ce9+5LpJJZjLJ1P/qPu4795z/Off1XiGlRCaTwXVdHMfBsizq6+uprq7Gtu2SQSl1K7AMqAYSQAr4Wwgh/k+AMAwxTRPTNLEsC9u2qaurY2BgANd1SafTDA0NMTg4SBAEJJNJwjAkCAJs2yazKzMzw8zMDNPT08zOzjIyMsLo6Ci+7+P7PrZtY1kWUsrSASGEsG3bLhVYs2YN69ato6OjA9d1SaVSDA4OMjAwQBAEJJNJfN9HCIFlWRiGgWEYGIaBYRgYhoFt29i2jW3b2LaN4zi4rovrurg=">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVFiFtZdNaFxVFMd/585782YmM5kkTdI0H7VJP1JbW6u1FqpWF4qCuHDhQheCCxe6cOPChQsXLly4cOFCXLhw4UKwuBBcuHDhwpULF1pBW6u1tZ+1bZqmTZrJTGYy837ce9+5LpJJZjLJ1P/qPu4795z/Off1XiGlRCaTwXVdHMfBsizq6+uprq7Gtu2SQSl1K7AMqAYSQAr4Wwgh/k+AMAwxTRPTNLEsC9u2qaurY2BgANd1S            const filtered = allBuses.filter(bus => (
+                bus.bus_number.toLowerCase().includes(searchTerm) ||
+                (bus.route && bus.route.toLowerCase().includes(searchTerm))
+            ));A0NMTg4SBAEJJNJwjAkCAJs2yazKzMzw8zMDNPT08zOzjIyMsLo6Ci+7+P7PrZtY1kWUsrSASGEsG3bLhVYs2YN69ato6OjA9d1SaVSDA4OMjAwQBAEJJNJfN9HCIFlWRiGgWEYGIaBYRgYhoFt29i2jW3b2LaN4zi4rovrurg=">
     <style>
         :root {
             --intel-blue: #0068B5;
@@ -668,7 +671,7 @@
             const searchTerm = document.getElementById('bus-search').value.toLowerCase();
             const filteredBuses = allBuses.filter(bus => 
                 bus.bus_number.toLowerCase().includes(searchTerm) || 
-                bus.route.toLowerCase().includes(searchTerm)
+                (bus.route && bus.route.toLowerCase().includes(searchTerm))
             );
             
             // Determine if we need to maintain booking state

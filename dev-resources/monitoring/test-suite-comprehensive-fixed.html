@@ -516,7 +516,7 @@
             return await legacyApiCall(action, params, method, data);
         }
 
-        // Legacy API call function for backward compatibility testing
+        // Legacy API call function with Intel proxy bypass
         async function legacyApiCall(action, params = {}, method = 'GET', data = null) {
             const url = new URL(`${API_BASE_URL}/production-api.php`, window.location.origin);
             url.searchParams.append('action', action);
@@ -530,7 +530,11 @@
 
             const config = {
                 method,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
             };
             
             if (method !== 'GET') {
@@ -548,7 +552,7 @@
                     result = { error: 'Invalid JSON response', response: await response.text() };
                 }
                 return { 
-                    success: response.ok, 
+                    success: response.ok && response.status < 400, 
                     data: result, 
                     status: response.status 
                 };

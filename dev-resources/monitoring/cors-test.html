@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Configuration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: rgba(40, 167, 69, 0.3);
+            border: 1px solid #28a745;
+        }
+        .error {
+            background: rgba(220, 53, 69, 0.3);
+            border: 1px solid #dc3545;
+        }
+        .info {
+            background: rgba(23, 162, 184, 0.3);
+            border: 1px solid #17a2b8;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .header-info {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌐 CORS Configuration Test Suite</h1>
+    <p>This page tests the CORS (Cross-Origin Resource Sharing) configuration of the Bus Booking API.</p>
+
+    <div class="test-container">
+        <h2>🔍 API Endpoint Tests</h2>
+        <button onclick="testHealthEndpoint()">Test Health Endpoint</button>
+        <button onclick="testBusesEndpoint()">Test Buses Endpoint</button>
+        <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
+        <button onclick="testPreflightRequest()">Test Preflight OPTIONS</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 CORS Headers Information</h2>
+        <div id="cors-info" class="info">
+            Click any test above to see CORS headers information
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        
+        function showResult(message, type, containerId = 'test-results') {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+
+        function showHeaders(response) {
+            const corsInfo = document.getElementById('cors-info');
+            let headerInfo = '<h3>Response Headers:</h3>';
+            
+            const corsHeaders = [
+                'access-control-allow-origin',
+                'access-control-allow-methods',
+                'access-control-allow-headers',
+                'access-control-max-age'
+            ];
+            
+            corsHeaders.forEach(header => {
+                const value = response.headers.get(header);
+                if (value) {
+                    headerInfo += `<div class="header-info"><strong>${header}:</strong> ${value}</div>`;
+                }
+            });
+            
+            corsInfo.innerHTML = headerInfo;
+        }
+
+        async function testHealthEndpoint() {
+            try {
+                showResult('🔄 Testing health endpoint...', 'info');
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                showHeaders(response);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ Health endpoint success: ${data.message}`, 'success');
+                } else {
+                    showResult(`❌ Health endpoint failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Health endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBusesEndpoint() {
+            try {
+                showResult('🔄 Testing buses/available endpoint...', 'info');
+                const response = await fetch(`${API_BASE_URL}/buses/available`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                showHeaders(response);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ Buses endpoint success: Found ${data.data ? data.data.length : 0} buses`, 'success');
+                } else {
+                    showResult(`❌ Buses endpoint failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Buses endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminEndpoint() {
+            try {
+                showResult('🔄 Testing admin/recent-bookings endpoint...', 'info');
+                const response = await fetch(`${API_BASE_URL}/admin/recent-bookings`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test-token'
+                    }
+                });
+                
+                showHeaders(response);
+                
+                if (response.status === 401) {
+                    showResult(`✅ Admin endpoint working: Authentication required (401)`, 'success');
+                } else if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ Admin endpoint success: ${data.message || 'Data received'}`, 'success');
+                } else {
+                    showResult(`❌ Admin endpoint failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Admin endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPreflightRequest() {
+            try {
+                showResult('🔄 Testing CORS preflight OPTIONS request...', 'info');
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                showHeaders(response);
+                
+                if (response.status === 204) {
+                    showResult(`✅ Preflight request success: 204 No Content`, 'success');
+                } else {
+                    showResult(`❌ Preflight request failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Preflight request error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run a basic test on page load
+        window.addEventListener('load', () => {
+            showResult('🚀 CORS Test Suite loaded. Click buttons above to test different endpoints.', 'info');
+        });
+    </script>
+</body>
+</html>
