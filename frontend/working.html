@@ -632,17 +632,37 @@
                 let existingBooking = null;
                 
                 try {
-                    const bookingCheck = await apiCall(`employee/bookings/${employeeId}`);
-                    if (bookingCheck.status === 'success' && bookingCheck.has_booking && bookingCheck.data.length > 0) {
+                    const bookingResponse = await fetch(`/api/api/production-api.php?action=employee-bookings&employee_id=${employeeId}&date=${new Date().toISOString().split('T')[0]}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        signal: AbortSignal.timeout(10000) // 10 second timeout
+                    });
+                    
+                    if (!bookingResponse.ok) {
+                        throw new Error(`HTTP ${bookingResponse.status}: ${bookingResponse.statusText}`);
+                    }
+                    
+                    const bookingCheck = await bookingResponse.json();
+                    if (bookingCheck.status === 'success' && bookingCheck.has_booking && bookingCheck.data && bookingCheck.data.length > 0) {
                         hasExistingBooking = true;
                         existingBooking = bookingCheck.data; // Keep as array
                     }
                 } catch (error) {
-                    console.log('No existing booking found');
+                    console.log('No existing booking found:', error.message);
                 }
                 
                 // Get available buses
-                const buses = await apiCall('buses/available');
+                const busResponse = await fetch('/api/api/production-api.php?action=available-buses', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: AbortSignal.timeout(10000) // 10 second timeout
+                });
+                
+                if (!busResponse.ok) {
+                    throw new Error(`HTTP ${busResponse.status}: ${busResponse.statusText}`);
+                }
+                
+                const buses = await busResponse.json();
                 
                 if (buses.status === 'success' && buses.data) {
                     displayBuses(buses.data, hasExistingBooking, existingBooking);
@@ -744,7 +764,9 @@
                     buttonHtml = '<button disabled style="margin-top: 15px; background: linear-gradient(135deg, #6c757d, #545b62); opacity: 0.7; cursor: not-allowed; font-weight: bold; color: #ffffff; border: 1px solid rgba(255,255,255,0.3); padding: 12px 20px; border-radius: 8px;">🚫 Slot Not Available</button>';
                 } else {
                     // Slot is available - can book this bus
-                    buttonHtml = `<button onclick="bookBus('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px; color: white; border: none; padding: 12px 20px; font-weight: 600; cursor: pointer;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">📅 Book This Bus</button>`;
+                    const slotName = bus.slot === 'morning' ? 'Morning' : 'Evening';
+                    const slotIcon = bus.slot === 'morning' ? '�' : '🌆';
+                    buttonHtml = `<button onclick="bookBusSlot('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px; color: white; border: none; padding: 12px 20px; font-weight: 600; cursor: pointer; width: 100%;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">${slotIcon} Book This ${slotName} Slot</button>`;
                 }
 
                 // Handle missing slot and departure time gracefully
@@ -798,8 +820,18 @@
                 let hasExistingBooking = false;
                 let existingBooking = null;
                 
-                const bookingCheck = await apiCall(`employee/bookings/${employeeId}`);
-                if (bookingCheck.status === 'success' && bookingCheck.has_booking && bookingCheck.data.length > 0) {
+                const bookingResponse = await fetch(`/api/api/production-api.php?action=employee-bookings&employee_id=${employeeId}&date=${new Date().toISOString().split('T')[0]}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: AbortSignal.timeout(10000)
+                });
+                
+                if (!bookingResponse.ok) {
+                    throw new Error(`HTTP ${bookingResponse.status}: ${bookingResponse.statusText}`);
+                }
+                
+                const bookingCheck = await bookingResponse.json();
+                if (bookingCheck.status === 'success' && bookingCheck.has_booking && bookingCheck.data && bookingCheck.data.length > 0) {
                     hasExistingBooking = true;
                     existingBooking = bookingCheck.data;
                 }
@@ -896,6 +928,63 @@
                 }
             } catch (error) {
                 showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // SIMPLIFIED DIRECT BOOKING FUNCTION
+        async function bookBusSlot(busNumber) {
+            const employeeId = document.getElementById('employee-id').value.trim();
+            if (!employeeId) {
+                showResult('❌ Please enter your Employee ID first.', 'error');
+                return;
+            }
+
+            try {
+                showResult('🔄 Processing your booking...', 'info');
+                
+                // Direct API call to production-api.php with proper action parameter
+                const response = await fetch('/api/api/production-api.php?action=create-booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employee_id: employeeId,
+                        bus_number: busNumber,
+                        schedule_date: new Date().toISOString().split('T')[0]
+                    }),
+                    signal: AbortSignal.timeout(15000) // 15 second timeout for booking
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result && result.status === 'success') {
+                    const booking = result.booking || {};
+                    const route = booking.route || 'Route TBD';
+                    const departureTime = booking.departure_time || 'Time TBD';
+                    const slot = booking.slot || 'Unknown';
+                    const slotEmoji = slot === 'morning' ? '🌅' : '🌆';
+                    
+                    showResult(`✅ Booking Confirmed Successfully!
+🚌 Bus: ${busNumber}
+${slotEmoji} Slot: ${slot}
+📍 Route: ${route}
+🕐 Departure: ${departureTime}
+🎫 Booking ID: ${booking.id || 'Generated'}`, 'success');
+                    
+                    // Refresh the employee data after successful booking
+                    setTimeout(() => checkEmployee(), 2000);
+                } else {
+                    const errorMessage = result?.message || 'Booking failed - please try again';
+                    showResult(`❌ Booking Failed: ${errorMessage}`, 'error');
+                }
+            } catch (error) {
+                console.error('Booking error:', error);
+                showResult(`❌ Network Error: Unable to process booking. Please check your connection and try again.`, 'error');
             }
         }
 

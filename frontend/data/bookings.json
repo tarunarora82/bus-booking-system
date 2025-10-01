@@ -159,8 +159,9 @@
         "slot": "morning",
         "route": "Downtown to Office",
         "departure_time": "08:15 AM",
-        "status": "active",
-        "created_at": "2025-10-01 21:50:13"
+        "status": "cancelled",
+        "created_at": "2025-10-01 21:50:13",
+        "cancelled_at": "2025-10-01 22:28:23"
     },
     {
         "id": "BK1759335624440",
@@ -170,7 +171,53 @@
         "slot": "evening",
         "route": "Office to Shopping Mall",
         "departure_time": "06:00 PM",
+        "status": "cancelled",
+        "created_at": "2025-10-01 21:50:24",
+        "cancelled_at": "2025-10-01 22:28:31"
+    },
+    {
+        "id": "BK1759340532139",
+        "employee_id": "EMP001",
+        "bus_number": "BUS001",
+        "schedule_date": "2025-10-01",
+        "slot": "morning",
+        "route": "Metro to Office",
+        "departure_time": "08:00 AM",
         "status": "active",
-        "created_at": "2025-10-01 21:50:24"
+        "created_at": "2025-10-01 23:12:12"
+    },
+    {
+        "id": "BK1759340583295",
+        "employee_id": "EMP002",
+        "bus_number": "BUS002",
+        "schedule_date": "2025-10-01",
+        "slot": "morning",
+        "route": "Downtown to Office",
+        "departure_time": "08:15 AM",
+        "status": "active",
+        "created_at": "2025-10-01 23:13:03"
+    },
+    {
+        "id": "BK1759340614294",
+        "employee_id": "11453732",
+        "bus_number": "BUS001",
+        "schedule_date": "2025-10-01",
+        "slot": "morning",
+        "route": "Metro to Office",
+        "departure_time": "08:00 AM",
+        "status": "active",
+        "created_at": "2025-10-01 23:13:34"
+    },
+    {
+        "id": "BK1759340622723",
+        "employee_id": "11453732",
+        "bus_number": "BUS005",
+        "schedule_date": "2025-10-01",
+        "slot": "evening",
+        "route": "Office to Shopping Mall",
+        "departure_time": "06:00 PM",
+        "status": "cancelled",
+        "created_at": "2025-10-01 23:13:42",
+        "cancelled_at": "2025-10-01 23:13:53"
     }
 ]

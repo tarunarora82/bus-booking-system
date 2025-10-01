@@ -117,7 +117,7 @@ try {
         echo json_encode($resp);
     } elseif (!empty($action)) {
         // Handle query-style requests for backward compatibility
-        handleQueryAction($action);
+        handleQueryAction($action, $inputJson);
     } else {
         http_response_code(404);
         $resp = [
@@ -137,7 +137,7 @@ try {
     ]);
 }
 
-function handleQueryAction($action) {
+function handleQueryAction($action, $inputJson = null) {
     switch ($action) {
         case 'health-check':
             echo json_encode([
@@ -162,12 +162,27 @@ function handleQueryAction($action) {
             break;
             
         case 'create-booking':
-            $input = $inputJson;
+            $input = $inputJson ?: $_POST;
             echo json_encode(createBooking($input));
             break;
             
+        case 'create-reservation':
+            $input = $inputJson ?: $_POST;
+            echo json_encode(createReservation($input));
+            break;
+            
+        case 'confirm-booking':
+            $input = $inputJson ?: $_POST;
+            echo json_encode(confirmBooking($input));
+            break;
+            
+        case 'release-reservation':
+            $input = $inputJson ?: $_POST;
+            echo json_encode(releaseReservation($input));
+            break;
+            
         case 'cancel-booking':
-            $input = $inputJson;
+            $input = $inputJson ?: $_POST;
             echo json_encode(cancelBooking($input));
             break;
             
@@ -368,7 +383,7 @@ function createBooking($data) {
         ];
     }
     
-    // Get bus details to determine slot
+    // Get bus details BEFORE acquiring lock to prevent deadlocks
     $buses = getAvailableBuses();
     $selectedBus = null;
     foreach ($buses['data'] as $bus) {
@@ -379,64 +394,115 @@ function createBooking($data) {
     }
     
     if (!$selectedBus) {
-        return [
-            'status' => 'error',
-            'message' => 'Selected bus not found'
-        ];
+        return ['status' => 'error', 'message' => 'Selected bus not found'];
     }
     
     $busSlot = $selectedBus['slot'] ?? 'unknown';
     
-    $bookings = loadBookings();
+    // ATOMIC OPERATION - File locked during booking process only
+    global $dataPath;
+    $bookingsFile = $dataPath . '/bookings.json';
+    $handle = fopen($bookingsFile, 'c+');
     
-    // Check for existing booking in the same slot (morning/evening)
-    foreach ($bookings as $booking) {
-        if ($booking['employee_id'] === $employeeId && 
-            $booking['schedule_date'] === $scheduleDate &&
-            $booking['status'] === 'active') {
-            
-            // Get the slot of the existing booking
-            $existingBuses = getAvailableBuses();
-            $existingSlot = 'unknown';
-            foreach ($existingBuses['data'] as $bus) {
-                if ($bus['bus_number'] === $booking['bus_number']) {
-                    $existingSlot = $bus['slot'] ?? 'unknown';
-                    break;
-                }
-            }
-            
-            if ($existingSlot === $busSlot) {
-                $slotName = $busSlot === 'morning' ? 'Morning' : ($busSlot === 'evening' ? 'Evening' : $busSlot);
-                return [
-                    'status' => 'error',
-                    'message' => "You already have a {$slotName} slot booking for today. Please cancel your existing {$slotName} booking first."
-                ];
-            }
+    if (!$handle) {
+        return ['status' => 'error', 'message' => 'Cannot access booking system'];
+    }
+    
+    // EXCLUSIVE LOCK with timeout - Prevents concurrent access
+    $lockAcquired = false;
+    $maxAttempts = 30; // 3 seconds max wait
+    $attempts = 0;
+    
+    while (!$lockAcquired && $attempts < $maxAttempts) {
+        if (flock($handle, LOCK_EX | LOCK_NB)) {
+            $lockAcquired = true;
+        } else {
+            $attempts++;
+            usleep(100000); // 0.1 second
         }
     }
     
-    // Create new booking with slot information
-    $bookingId = 'BK' . time() . rand(100, 999);
-    $newBooking = [
-        'id' => $bookingId,
-        'employee_id' => $employeeId,
-        'bus_number' => $busNumber,
-        'schedule_date' => $scheduleDate,
-        'slot' => $busSlot,
-        'route' => $selectedBus['route'] ?? 'Route TBD',
-        'departure_time' => $selectedBus['departure_time'] ?? '00:00',
-        'status' => 'active',
-        'created_at' => date('Y-m-d H:i:s')
-    ];
+    if (!$lockAcquired) {
+        fclose($handle);
+        return ['status' => 'error', 'message' => 'System busy, please try again in a moment'];
+    }
     
-    $bookings[] = $newBooking;
-    saveBookings($bookings);
-    
-    return [
-        'status' => 'success',
-        'message' => 'Booking created successfully',
-        'booking' => $newBooking
-    ];
+    try {
+        // Read current bookings inside lock
+        $content = stream_get_contents($handle);
+        $bookings = $content ? json_decode($content, true) ?: [] : [];
+        
+        $busSlot = $selectedBus['slot'] ?? 'unknown';
+        
+        // Check for existing bookings (INSIDE LOCKED SECTION)
+        foreach ($bookings as $booking) {
+            if ($booking['employee_id'] === $employeeId && 
+                $booking['schedule_date'] === $scheduleDate &&
+                $booking['status'] === 'active') {
+                
+                // Get existing booking slot
+                foreach ($buses['data'] as $bus) {
+                    if ($bus['bus_number'] === $booking['bus_number']) {
+                        $existingSlot = $bus['slot'] ?? 'unknown';
+                        if ($existingSlot === $busSlot) {
+                            $slotName = $busSlot === 'morning' ? 'Morning' : 'Evening';
+                            return [
+                                'status' => 'error',
+                                'message' => "You already have a {$slotName} slot booking for today."
+                            ];
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Check bus capacity
+        $busBookingCount = 0;
+        foreach ($bookings as $booking) {
+            if ($booking['bus_number'] === $busNumber && 
+                $booking['schedule_date'] === $scheduleDate && 
+                $booking['status'] === 'active') {
+                $busBookingCount++;
+            }
+        }
+        
+        if ($busBookingCount >= ($selectedBus['capacity'] ?? 45)) {
+            return ['status' => 'error', 'message' => 'Bus is fully booked'];
+        }
+        
+        // Create booking (STILL INSIDE LOCKED SECTION)
+        $bookingId = 'BK' . time() . rand(100, 999);
+        $newBooking = [
+            'id' => $bookingId,
+            'employee_id' => $employeeId,
+            'bus_number' => $busNumber,
+            'schedule_date' => $scheduleDate,
+            'slot' => $busSlot,
+            'route' => $selectedBus['route'] ?? 'Route TBD',
+            'departure_time' => $selectedBus['departure_time'] ?? '00:00',
+            'status' => 'active',
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+        
+        $bookings[] = $newBooking;
+        
+        // Write back atomically
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, json_encode($bookings, JSON_PRETTY_PRINT));
+        
+        return [
+            'status' => 'success',
+            'message' => 'Booking created successfully',
+            'booking' => $newBooking
+        ];
+        
+    } finally {
+        // Always release lock
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
 }
 
 function cancelBooking($data) {
@@ -529,12 +595,186 @@ function loadBookings() {
         return [];
     }
     
-    return json_decode(file_get_contents($bookingsFile), true) ?: [];
+    $handle = fopen($bookingsFile, 'r');
+    if (!$handle) {
+        return [];
+    }
+    
+    // SHARED LOCK for reading
+    if (flock($handle, LOCK_SH)) {
+        $content = stream_get_contents($handle);
+        flock($handle, LOCK_UN);
+        fclose($handle);
+        return $content ? json_decode($content, true) ?: [] : [];
+    }
+    
+    fclose($handle);
+    return [];
 }
 
 function saveBookings($bookings) {
     global $dataPath;
     $bookingsFile = $dataPath . '/bookings.json';
-    file_put_contents($bookingsFile, json_encode($bookings, JSON_PRETTY_PRINT));
+    
+    $handle = fopen($bookingsFile, 'c');
+    if (!$handle) {
+        return false;
+    }
+    
+    // EXCLUSIVE LOCK for writing
+    if (flock($handle, LOCK_EX)) {
+        ftruncate($handle, 0);
+        rewind($handle);
+        $result = fwrite($handle, json_encode($bookings, JSON_PRETTY_PRINT));
+        flock($handle, LOCK_UN);
+        fclose($handle);
+        return $result !== false;
+    }
+    
+    fclose($handle);
+    return false;
+}
+
+// SOFT LOCKING FUNCTIONS
+function createReservation($data) {
+    $employeeId = $data['employee_id'] ?? '';
+    $busNumber = $data['bus_number'] ?? '';
+    $scheduleDate = $data['schedule_date'] ?? date('Y-m-d');
+    $lockTimeout = 30; // 30 seconds reservation
+    
+    if (empty($employeeId) || empty($busNumber)) {
+        return [
+            'status' => 'error',
+            'message' => 'Employee ID and Bus Number are required'
+        ];
+    }
+    
+    global $dataPath;
+    $lockKey = "booking_lock_{$busNumber}_{$scheduleDate}";
+    $lockFile = $dataPath . "/{$lockKey}.lock";
+    $lockData = [
+        'employee_id' => $employeeId,
+        'bus_number' => $busNumber,
+        'schedule_date' => $scheduleDate,
+        'expires_at' => time() + $lockTimeout,
+        'created_at' => time()
+    ];
+    
+    // Check if bus exists and get details
+    $buses = getAvailableBuses();
+    $selectedBus = null;
+    foreach ($buses['data'] as $bus) {
+        if ($bus['bus_number'] === $busNumber) {
+            $selectedBus = $bus;
+            break;
+        }
+    }
+    
+    if (!$selectedBus) {
+        return ['status' => 'error', 'message' => 'Selected bus not found'];
+    }
+    
+    // Try to acquire soft lock
+    $handle = fopen($lockFile, 'c+');
+    if (!$handle) {
+        return ['status' => 'error', 'message' => 'Cannot create reservation'];
+    }
+    
+    if (flock($handle, LOCK_EX)) {
+        // Check existing lock
+        $content = stream_get_contents($handle);
+        if ($content) {
+            $existingLock = json_decode($content, true);
+            if ($existingLock && $existingLock['expires_at'] > time()) {
+                // Lock still valid
+                if ($existingLock['employee_id'] !== $employeeId) {
+                    flock($handle, LOCK_UN);
+                    fclose($handle);
+                    $timeLeft = $existingLock['expires_at'] - time();
+                    return [
+                        'status' => 'error',
+                        'message' => "Bus is temporarily reserved by another user. Please try again in {$timeLeft} seconds."
+                    ];
+                }
+            }
+        }
+        
+        // Create/update reservation
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, json_encode($lockData));
+        flock($handle, LOCK_UN);
+        fclose($handle);
+        
+        return [
+            'status' => 'success',
+            'message' => 'Bus reserved for 30 seconds',
+            'reservation_token' => md5($lockKey . $employeeId),
+            'expires_at' => $lockData['expires_at'],
+            'bus_details' => $selectedBus
+        ];
+    }
+    
+    fclose($handle);
+    return ['status' => 'error', 'message' => 'Cannot acquire reservation'];
+}
+
+function confirmBooking($data) {
+    $employeeId = $data['employee_id'] ?? '';
+    $busNumber = $data['bus_number'] ?? '';
+    $scheduleDate = $data['schedule_date'] ?? date('Y-m-d');
+    $reservationToken = $data['reservation_token'] ?? '';
+    
+    $lockKey = "booking_lock_{$busNumber}_{$scheduleDate}";
+    $expectedToken = md5($lockKey . $employeeId);
+    
+    if ($reservationToken !== $expectedToken) {
+        return ['status' => 'error', 'message' => 'Invalid reservation token'];
+    }
+    
+    // Verify reservation is still valid
+    global $dataPath;
+    $lockFile = $dataPath . "/{$lockKey}.lock";
+    if (file_exists($lockFile)) {
+        $lockData = json_decode(file_get_contents($lockFile), true);
+        if (!$lockData || $lockData['expires_at'] <= time() || $lockData['employee_id'] !== $employeeId) {
+            @unlink($lockFile);
+            return ['status' => 'error', 'message' => 'Reservation expired or invalid'];
+        }
+    } else {
+        return ['status' => 'error', 'message' => 'Reservation not found'];
+    }
+    
+    // Proceed with actual booking creation
+    $result = createBooking([
+        'employee_id' => $employeeId,
+        'bus_number' => $busNumber,
+        'schedule_date' => $scheduleDate
+    ]);
+    
+    // Clean up reservation
+    @unlink($lockFile);
+    
+    return $result;
+}
+
+function releaseReservation($data) {
+    $employeeId = $data['employee_id'] ?? '';
+    $busNumber = $data['bus_number'] ?? '';
+    $scheduleDate = $data['schedule_date'] ?? date('Y-m-d');
+    
+    global $dataPath;
+    $lockKey = "booking_lock_{$busNumber}_{$scheduleDate}";
+    $lockFile = $dataPath . "/{$lockKey}.lock";
+    
+    if (file_exists($lockFile)) {
+        $lockData = json_decode(file_get_contents($lockFile), true);
+        if ($lockData && $lockData['employee_id'] === $employeeId) {
+            @unlink($lockFile);
+            return ['status' => 'success', 'message' => 'Reservation released'];
+        }
+    }
+    
+    return ['status' => 'error', 'message' => 'Reservation not found or not owned by user'];
 }
 ?>

@@ -79,6 +79,9 @@ COPY . /var/www/html
 # Copy existing application directory permissions
 COPY --chown=www:www . /var/www/html
 
+# Copy PHP-FPM pool configuration
+COPY www.conf /usr/local/etc/php-fpm.d/www.conf
+
 # Change current user to www
 USER www
 

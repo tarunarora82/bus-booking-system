@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concurrency & Soft Locking Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .test-section { 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin: 20px 0; 
+            background: #f9f9f9; 
+        }
+        .test-section h3 { 
+            color: #2c3e50; 
+            margin-top: 0; 
+        }
+        button { 
+            background: linear-gradient(135deg, #3498db, #2980b9); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin: 5px; 
+            font-weight: 600;
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+        }
+        button.success { background: linear-gradient(135deg, #27ae60, #229954); }
+        button.danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        button.warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .results { 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            padding: 15px; 
+            margin-top: 15px; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        .log-entry { 
+            padding: 5px 0; 
+            border-bottom: 1px solid #eee; 
+        }
+        .log-entry:last-child { 
+            border-bottom: none; 
+        }
+        .success-msg { color: #27ae60; font-weight: bold; }
+        .error-msg { color: #e74c3c; font-weight: bold; }
+        .info-msg { color: #3498db; font-weight: bold; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .countdown {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Bus Booking System - Concurrency & Soft Locking Test</h1>
+        <p>This page tests both file locking (Option 1) and soft locking (Option 3) implementations.</p>
+
+        <!-- Stats Dashboard -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTests">0</div>
+                <div>Total Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="successfulBookings">0</div>
+                <div>Successful Bookings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="failedBookings">0</div>
+                <div>Failed Bookings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeReservations">0</div>
+                <div>Active Reservations</div>
+            </div>
+        </div>
+
+        <!-- Test 1: File Locking -->
+        <div class="test-section">
+            <h3>🔒 Test 1: File Locking (Race Condition Prevention)</h3>
+            <p>Tests if multiple simultaneous bookings for the same bus are prevented by file locking.</p>
+            <button onclick="testFileLocking()" class="success">Run File Locking Test</button>
+            <button onclick="clearBookings()" class="danger">Clear All Bookings</button>
+            <div class="results" id="fileLockingResults"></div>
+        </div>
+
+        <!-- Test 2: Soft Locking -->
+        <div class="test-section">
+            <h3>🎫 Test 2: Soft Locking (Reservation System)</h3>
+            <p>Tests the reservation system with 30-second soft locks.</p>
+            <button onclick="testSoftLocking()" class="warning">Test Reservation System</button>
+            <button onclick="clearReservations()" class="danger">Clear All Reservations</button>
+            <div class="results" id="softLockingResults"></div>
+        </div>
+
+        <!-- Test 3: Slot Management -->
+        <div class="test-section">
+            <h3>🌅🌆 Test 3: Slot Management</h3>
+            <p>Tests morning/evening slot restrictions and capacity limits.</p>
+            <button onclick="testSlotManagement()" class="success">Test Slot Management</button>
+            <div class="results" id="slotResults"></div>
+        </div>
+
+        <!-- Test 4: Live Monitoring -->
+        <div class="test-section">
+            <h3>📊 Test 4: Live System Status</h3>
+            <p>Real-time monitoring of bookings and reservations.</p>
+            <button onclick="startMonitoring()" class="success">Start Monitoring</button>
+            <button onclick="stopMonitoring()" class="danger">Stop Monitoring</button>
+            <div class="results" id="monitoringResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let testStats = {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            reservations: 0
+        };
+
+        let monitoringInterval = null;
+
+        // API Helper Function
+        async function apiCall(action, data = {}) {
+            try {
+                const response = await fetch('/api/api/production-api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, ...data })
+                });
+                return await response.json();
+            } catch (error) {
+                return { status: 'error', message: error.message };
+            }
+        }
+
+        // Update Statistics
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('successfulBookings').textContent = testStats.successful;
+            document.getElementById('failedBookings').textContent = testStats.failed;
+            document.getElementById('activeReservations').textContent = testStats.reservations;
+        }
+
+        // Log Helper
+        function log(elementId, message, type = 'info') {
+            const results = document.getElementById(elementId);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}-msg`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(entry);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        // Test 1: File Locking
+        async function testFileLocking() {
+            log('fileLockingResults', '🔒 Starting File Locking Test...', 'info');
+            log('fileLockingResults', 'Launching 5 simultaneous booking requests for Bus B001...', 'info');
+            
+            const promises = [];
+            for (let i = 1; i <= 5; i++) {
+                promises.push(
+                    apiCall('create-booking', {
+                        employee_id: `FILELOCK${i}`,
+                        bus_number: 'B001',
+                        schedule_date: new Date().toISOString().split('T')[0]
+                    })
+                );
+            }
+
+            const results = await Promise.all(promises);
+            let successCount = 0;
+            
+            results.forEach((result, index) => {
+                testStats.total++;
+                if (result.status === 'success') {
+                    successCount++;
+                    testStats.successful++;
+                    log('fileLockingResults', `✅ Employee FILELOCK${index + 1}: BOOKING SUCCESS`, 'success');
+                } else {
+                    testStats.failed++;
+                    log('fileLockingResults', `❌ Employee FILELOCK${index + 1}: ${result.message}`, 'error');
+                }
+            });
+
+            // Analysis
+            if (successCount === 1) {
+                log('fileLockingResults', `🎯 ANALYSIS: ✅ FILE LOCKING WORKS! Only 1 booking succeeded (race condition prevented)`, 'success');
+            } else if (successCount > 1) {
+                log('fileLockingResults', `🎯 ANALYSIS: ❌ FILE LOCKING FAILED! ${successCount} bookings succeeded (race condition occurred)`, 'error');
+            } else {
+                log('fileLockingResults', `🎯 ANALYSIS: ❓ NO BOOKINGS succeeded - check system status`, 'info');
+            }
+
+            updateStats();
+        }
+
+        // Test 2: Soft Locking
+        async function testSoftLocking() {
+            log('softLockingResults', '🎫 Starting Soft Locking Test...', 'info');
+            
+            // Step 1: Create reservation
+            log('softLockingResults', 'Step 1: Creating reservation for Bus B002...', 'info');
+            const reservation = await apiCall('create-reservation', {
+                employee_id: 'SOFTLOCK1',
+                bus_number: 'B002',
+                schedule_date: new Date().toISOString().split('T')[0]
+            });
+
+            if (reservation.status === 'success') {
+                testStats.reservations++;
+                log('softLockingResults', `✅ Reservation created! Token: ${reservation.reservation_token}`, 'success');
+                log('softLockingResults', `⏰ Expires in: ${reservation.expires_at - Math.floor(Date.now() / 1000)} seconds`, 'info');
+                
+                // Start countdown
+                const countdownElement = document.createElement('div');
+                countdownElement.className = 'countdown';
+                document.getElementById('softLockingResults').appendChild(countdownElement);
+                
+                const countdownInterval = setInterval(() => {
+                    const remaining = reservation.expires_at - Math.floor(Date.now() / 1000);
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        countdownElement.textContent = '⏰ Reservation expired';
+                        testStats.reservations--;
+                    } else {
+                        countdownElement.textContent = `⏰ Reservation expires in: ${remaining} seconds`;
+                    }
+                }, 1000);
+
+                // Step 2: Test conflicting reservation
+                log('softLockingResults', 'Step 2: Testing conflicting reservation...', 'info');
+                const conflict = await apiCall('create-reservation', {
+                    employee_id: 'SOFTLOCK2',
+                    bus_number: 'B002',
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+
+                if (conflict.status === 'error') {
+                    log('softLockingResults', `✅ Conflicting reservation blocked: ${conflict.message}`, 'success');
+                } else {
+                    log('softLockingResults', `❌ Conflicting reservation allowed! Soft lock failed.`, 'error');
+                }
+
+                // Step 3: Confirm booking
+                setTimeout(async () => {
+                    log('softLockingResults', 'Step 3: Confirming booking...', 'info');
+                    const confirmation = await apiCall('confirm-booking', {
+                        employee_id: 'SOFTLOCK1',
+                        bus_number: 'B002',
+                        schedule_date: new Date().toISOString().split('T')[0],
+                        reservation_token: reservation.reservation_token
+                    });
+
+                    if (confirmation.status === 'success') {
+                        log('softLockingResults', `✅ Booking confirmed! ID: ${confirmation.booking.id}`, 'success');
+                        testStats.successful++;
+                        testStats.reservations--;
+                        clearInterval(countdownInterval);
+                        countdownElement.remove();
+                    } else {
+                        log('softLockingResults', `❌ Booking confirmation failed: ${confirmation.message}`, 'error');
+                        testStats.failed++;
+                    }
+                    updateStats();
+                }, 3000); // Wait 3 seconds before confirming
+
+            } else {
+                log('softLockingResults', `❌ Reservation creation failed: ${reservation.message}`, 'error');
+                testStats.failed++;
+            }
+
+            updateStats();
+        }
+
+        // Test 3: Slot Management
+        async function testSlotManagement() {
+            log('slotResults', '🌅🌆 Starting Slot Management Test...', 'info');
+            
+            // Test morning slot booking
+            log('slotResults', 'Testing morning slot booking...', 'info');
+            const morningBooking = await apiCall('create-booking', {
+                employee_id: 'SLOT001',
+                bus_number: 'B001', // Morning slot
+                schedule_date: new Date().toISOString().split('T')[0]
+            });
+
+            if (morningBooking.status === 'success') {
+                log('slotResults', '✅ Morning slot booking successful', 'success');
+                
+                // Try to book another morning slot
+                const conflictMorning = await apiCall('create-booking', {
+                    employee_id: 'SLOT001',
+                    bus_number: 'B003', // Another morning slot
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+
+                if (conflictMorning.status === 'error') {
+                    log('slotResults', '✅ Morning slot conflict prevented: ' + conflictMorning.message, 'success');
+                } else {
+                    log('slotResults', '❌ Morning slot conflict not prevented!', 'error');
+                }
+
+                // Try to book evening slot (should work)
+                const eveningBooking = await apiCall('create-booking', {
+                    employee_id: 'SLOT001',
+                    bus_number: 'B004', // Evening slot
+                    schedule_date: new Date().toISOString().split('T')[0]
+                });
+
+                if (eveningBooking.status === 'success') {
+                    log('slotResults', '✅ Evening slot booking successful (different slot allowed)', 'success');
+                } else {
+                    log('slotResults', '❌ Evening slot booking failed: ' + eveningBooking.message, 'error');
+                }
+
+            } else {
+                log('slotResults', '❌ Morning booking failed: ' + morningBooking.message, 'error');
+            }
+        }
+
+        // Live Monitoring
+        async function startMonitoring() {
+            log('monitoringResults', '📊 Starting live monitoring...', 'info');
+            
+            monitoringInterval = setInterval(async () => {
+                try {
+                    const bookings = await apiCall('admin-bookings');
+                    if (bookings.status === 'success') {
+                        const today = new Date().toISOString().split('T')[0];
+                        const todayBookings = bookings.data.filter(b => 
+                            b.schedule_date === today && b.status === 'active'
+                        );
+                        
+                        const busGroups = {};
+                        todayBookings.forEach(booking => {
+                            const bus = booking.bus_number;
+                            if (!busGroups[bus]) busGroups[bus] = 0;
+                            busGroups[bus]++;
+                        });
+
+                        let statusHTML = `<strong>📈 Live Status (${new Date().toLocaleTimeString()}):</strong><br>`;
+                        statusHTML += `Total active bookings today: ${todayBookings.length}<br>`;
+                        
+                        Object.entries(busGroups).forEach(([bus, count]) => {
+                            statusHTML += `🚌 Bus ${bus}: ${count} bookings<br>`;
+                        });
+
+                        document.getElementById('monitoringResults').innerHTML = statusHTML;
+                    }
+                } catch (error) {
+                    log('monitoringResults', `❌ Monitoring error: ${error.message}`, 'error');
+                }
+            }, 2000);
+        }
+
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                log('monitoringResults', '⏸️ Monitoring stopped', 'info');
+            }
+        }
+
+        // Clear Functions
+        async function clearBookings() {
+            // Note: This would need a clear-bookings endpoint in the API
+            log('fileLockingResults', '🧹 Clearing bookings...', 'info');
+            testStats.successful = 0;
+            testStats.failed = 0;
+            testStats.total = 0;
+            updateStats();
+        }
+
+        async function clearReservations() {
+            // Note: This would clear reservation files
+            log('softLockingResults', '🧹 Clearing reservations...', 'info');
+            testStats.reservations = 0;
+            updateStats();
+        }
+
+        // Initialize
+        updateStats();
+    </script>
+</body>
+</html>

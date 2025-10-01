@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simplified Booking System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .test-btn { background: #007bff; color: white; }
+        .test-btn:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 Simplified Booking System Test</h1>
+        <p>Testing the fixed endpoints and simplified single-button booking</p>
+
+        <div class="test-section">
+            <h3>📋 Employee ID for Testing</h3>
+            <input type="text" id="test-employee-id" placeholder="Enter Employee ID (e.g., EMP001)" value="EMP001">
+        </div>
+
+        <div class="test-section">
+            <h3>🏥 API Health Check</h3>
+            <button class="test-btn" onclick="testHealthCheck()">Test Health Check</button>
+            <div id="health-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚍 Available Buses</h3>
+            <button class="test-btn" onclick="testAvailableBuses()">Get Available Buses</button>
+            <div id="buses-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📅 Available Schedules</h3>
+            <button class="test-btn" onclick="testAvailableSchedules()">Get Available Schedules</button>
+            <div id="schedules-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Employee Bookings</h3>
+            <button class="test-btn" onclick="testEmployeeBookings()">Check Current Bookings</button>
+            <div id="employee-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎫 Direct Booking Test</h3>
+            <input type="text" id="test-bus-number" placeholder="Bus Number (e.g., BUS001)" value="BUS001">
+            <button class="test-btn" onclick="testDirectBooking()">Test Direct Booking</button>
+            <div id="booking-result"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>📝 Test Log</h3>
+            <div id="test-log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = './backend/api/production-api.php';
+        let testCount = 0;
+
+        function log(message, type = 'info') {
+            testCount++;
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('test-log');
+            const colorClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            logDiv.innerHTML += `<div class="${colorClass}" style="margin: 5px 0; padding: 8px; border-radius: 4px;">[${timestamp}] Test ${testCount}: ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function displayResult(elementId, data, success = true) {
+            const element = document.getElementById(elementId);
+            const className = success ? 'success' : 'error';
+            element.innerHTML = `<div class="${className}"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                let url = `${API_BASE}?action=${endpoint}`;
+                
+                if (method === 'POST' && data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                log(`Making ${method} request to ${endpoint}`, 'info');
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                log(`${endpoint} response: ${result.status || 'received'}`, result.status === 'success' ? 'success' : 'error');
+                return result;
+            } catch (error) {
+                log(`${endpoint} failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function testHealthCheck() {
+            try {
+                const result = await apiCall('health-check');
+                displayResult('health-result', result, true);
+            } catch (error) {
+                displayResult('health-result', { error: error.message }, false);
+            }
+        }
+
+        async function testAvailableBuses() {
+            try {
+                const result = await apiCall('available-buses');
+                displayResult('buses-result', result, true);
+            } catch (error) {
+                displayResult('buses-result', { error: error.message }, false);
+            }
+        }
+
+        async function testAvailableSchedules() {
+            try {
+                const result = await apiCall('available-schedules');
+                displayResult('schedules-result', result, true);
+            } catch (error) {
+                displayResult('schedules-result', { error: error.message }, false);
+            }
+        }
+
+        async function testEmployeeBookings() {
+            try {
+                const employeeId = document.getElementById('test-employee-id').value || 'EMP001';
+                const today = new Date().toISOString().split('T')[0];
+                const result = await apiCall(`employee-bookings&employee_id=${employeeId}&date=${today}`);
+                displayResult('employee-result', result, true);
+            } catch (error) {
+                displayResult('employee-result', { error: error.message }, false);
+            }
+        }
+
+        async function testDirectBooking() {
+            try {
+                const employeeId = document.getElementById('test-employee-id').value || 'EMP001';
+                const busNumber = document.getElementById('test-bus-number').value || 'BUS001';
+                const today = new Date().toISOString().split('T')[0];
+                
+                const bookingData = {
+                    employee_id: employeeId,
+                    bus_number: busNumber,
+                    schedule_date: today
+                };
+
+                const result = await apiCall('create-booking', 'POST', bookingData);
+                displayResult('booking-result', result, result.status === 'success');
+            } catch (error) {
+                displayResult('booking-result', { error: error.message }, false);
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            log('Starting simplified booking system tests', 'info');
+            setTimeout(testHealthCheck, 1000);
+        };
+    </script>
+</body>
+</html>
