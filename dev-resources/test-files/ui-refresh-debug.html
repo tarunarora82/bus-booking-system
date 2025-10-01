@@ -85,7 +85,7 @@
                     const employeeId = endpoint.split('/')[2];
                     apiUrl = `/query-api.php?action=employee-bookings&employee_id=${employeeId}&date=${new Date().toISOString().split('T')[0]}`;
                 } else if (endpoint === 'buses/available') {
-                    apiUrl = '/query-api.php?action=available-buses';
+                    apiUrl = '/api/schedules/available';
                 } else if (endpoint === 'booking/create') {
                     apiUrl = '/query-api.php';
                     config.body = JSON.stringify({

@@ -442,20 +442,101 @@
     <script>
         const API_BASE_URL = '/api';
 
+        // Map modern endpoints to legacy action names for fallback
+        function mapEndpointToAction(endpoint) {
+            if (!endpoint) return null;
+            // Normalise
+            const ep = endpoint.toString();
+            if (ep === 'bookings/create' || ep === 'booking/create') return 'create-booking';
+            if (ep === 'bookings/cancel' || ep === 'booking/cancel') return 'cancel-booking';
+            if (ep === 'buses/available' || ep === 'schedules/available') return 'available-buses';
+            if (ep.startsWith('employee/bookings')) return 'employee-bookings';
+            return null;
+        }
+
         async function apiCall(endpoint, method = 'GET', data = null) {
             const config = {
                 method,
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             };
-            
-            if (data) {
-                config.body = JSON.stringify(data);
+
+            if (data) config.body = JSON.stringify(data);
+
+            const requestUrl = `${API_BASE_URL}/${endpoint}`;
+            console.debug('[apiCall] Request ->', { url: requestUrl, method, payload: data });
+
+            try {
+                // Primary request
+                let response = await fetch(requestUrl, config);
+                let text = await response.text().catch(() => response.statusText);
+                let json;
+                try { json = text ? JSON.parse(text) : null; } catch (e) { json = { message: text || response.statusText || 'No response' }; }
+
+                console.debug('[apiCall] Response <-', { url: requestUrl, status: response.status, body: json });
+
+                const errMsg = (json && (json.message || json.error)) || '';
+                // Treat literal 'Endpoint not found' in body as an error too
+                if (response.ok && !( /endpoint not found/i.test(errMsg) )) {
+                    return json;
+                }
+
+                // One-off retry after short delay
+                console.warn('[apiCall] Received error; retrying once after delay', { url: requestUrl, status: response.status, body: json });
+                await new Promise(r => setTimeout(r, 300));
+                try {
+                    const retryResp = await fetch(requestUrl, config);
+                    const retryText = await retryResp.text().catch(() => retryResp.statusText);
+                    let retryJson;
+                    try { retryJson = retryText ? JSON.parse(retryText) : null; } catch (e) { retryJson = { message: retryText || retryResp.statusText }; }
+                    console.debug('[apiCall] Retry Response <-', { url: requestUrl, status: retryResp.status, body: retryJson });
+                    if (retryResp.ok && !(/endpoint not found/i.test((retryJson && (retryJson.message || retryJson.error)) || ''))) return retryJson;
+                    response = retryResp; json = retryJson;
+                } catch (e) {
+                    console.warn('[apiCall] Retry failed', e);
+                }
+
+                // Legacy fallback: try production-api.php?action=...
+                const legacyAction = mapEndpointToAction(endpoint);
+                if (legacyAction) {
+                    const legacyPaths = [
+                        `${window.location.origin}/api/production-api.php`,
+                        `${window.location.origin}/api/api/production-api.php`
+                    ];
+
+                    for (const url of legacyPaths) {
+                        try {
+                            if (method === 'GET') {
+                                const u = new URL(url);
+                                u.searchParams.set('action', legacyAction);
+                                if (endpoint.startsWith('employee/bookings/')) {
+                                    const parts = endpoint.split('/');
+                                    if (parts[2]) u.searchParams.set('employee_id', parts[2]);
+                                }
+                                const r = await fetch(u.toString(), { method: 'GET', headers: config.headers });
+                                const jrText = await r.text().catch(() => r.statusText);
+                                let jr; try { jr = jrText ? JSON.parse(jrText) : null; } catch (e) { jr = { message: jrText }; }
+                                if (r.ok && !(/endpoint not found/i.test((jr && (jr.message || jr.error)) || ''))) return jr;
+                            } else {
+                                const fallbackBody = Object.assign({}, data || {}, { action: legacyAction });
+                                const r = await fetch(url, { method: 'POST', headers: config.headers, body: JSON.stringify(fallbackBody) });
+                                const jrText = await r.text().catch(() => r.statusText);
+                                let jr; try { jr = jrText ? JSON.parse(jrText) : null; } catch (e) { jr = { message: jrText }; }
+                                if (r.ok && !(/endpoint not found/i.test((jr && (jr.message || jr.error)) || ''))) return jr;
+                            }
+                        } catch (e) {
+                            // Try next legacy path
+                            continue;
+                        }
+                    }
+                }
+
+                return json;
+            } catch (err) {
+                // Bubble up network errors
+                throw err;
             }
-            
-            const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
-            return await response.json();
         }
 
         function showResult(message, type) {
@@ -568,19 +649,31 @@
                     
                     if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
                         let bookingDetails = '';
+                        let morningBooked = false;
+                        let eveningBooked = false;
+                        
                         existingBooking.forEach(booking => {
                             const slotEmoji = booking.slot === 'morning' ? '🌅' : '🌆';
                             const slotName = booking.slot === 'morning' ? 'Morning' : 'Evening';
-                            // Get route from bus data if available
                             const route = booking.route && booking.route !== 'undefined' ? booking.route : 'Route TBD';
                             const time = booking.departure_time || (booking.slot === 'morning' ? '08:00' : '16:00');
                             bookingDetails += `\n🚌 Bus ${booking.bus_number} - ${route} (${slotEmoji} ${slotName} at ${time})`;
+                            
+                            if (booking.slot === 'morning') morningBooked = true;
+                            if (booking.slot === 'evening') eveningBooked = true;
                         });
-                        showResult(`✅ Employee ${employeeId} - Found existing bookings:${bookingDetails}
-                        📝 You can book additional slots if available (one morning + one evening allowed)`, 'success');
+                        
+                        let availableSlots = [];
+                        if (!morningBooked) availableSlots.push('Morning');
+                        if (!eveningBooked) availableSlots.push('Evening');
+                        
+                        const availabilityMsg = availableSlots.length > 0 
+                            ? `\n📝 Available slots: ${availableSlots.join(' and ')}` 
+                            : '\n📝 All slots booked (Morning + Evening)';
+                        
+                        showResult(`✅ Employee ${employeeId} - Current bookings:${bookingDetails}${availabilityMsg}`, 'success');
                     } else {
-                        showResult(`✅ Employee ${employeeId} - No existing bookings found
-                        🚌 Select a bus below to make your booking (one morning + one evening slot allowed)`, 'success');
+                        showResult(`✅ Employee ${employeeId} - No existing bookings\n🚌 You can book one Morning slot and one Evening slot`, 'success');
                     }
                 } else {
                     showResult('❌ No buses available', 'error');
@@ -622,30 +715,36 @@
                 let buttonHtml = '';
                 let statusHtml = '';
                 
-                // Check if this bus is already booked by checking the array
+                // Check slot-based booking logic
                 let isThisBusBooked = false;
+                let hasSlotBooking = false;
+                let bookedBusInSlot = null;
+                
                 if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
+                    // Check if this specific bus is booked
                     isThisBusBooked = existingBooking.some(booking => booking.bus_number === bus.bus_number);
+                    
+                    // Check if this slot (morning/evening) is already booked with any bus
+                    const slotBooking = existingBooking.find(booking => booking.slot === bus.slot);
+                    if (slotBooking) {
+                        hasSlotBooking = true;
+                        bookedBusInSlot = slotBooking;
+                    }
                 }
                 
                 if (isThisBusBooked) {
                     // This specific bus is already booked by the employee
-                    statusHtml = '<div style="color: #fff; font-weight: bold; padding: 8px 12px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; margin: 10px 0; display: inline-block;">✅ YOUR CURRENT BOOKING</div>';
-                    buttonHtml = `<button onclick="cancelBooking('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #dc3545, #c82333); border-radius: 8px;">❌ Cancel Booking</button>`;
-                } else if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
-                    // Check if this slot is already taken
-                    const hasSlotBooking = existingBooking.some(booking => booking.slot === bus.slot);
-                    if (hasSlotBooking) {
-                        const slotName = bus.slot === 'morning' ? 'Morning' : 'Evening';
-                        statusHtml = `<div style="color: #ffffff; font-weight: bold; padding: 12px 16px; background: rgba(220, 53, 69, 0.9); border-radius: 10px; margin: 10px 0; display: inline-block; border: 2px solid rgba(220, 53, 69, 1); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);">⚠️ ${slotName} Slot Already Booked</div>`;
-                        buttonHtml = '<button disabled style="margin-top: 15px; background: linear-gradient(135deg, #6c757d, #545b62); opacity: 0.9; cursor: not-allowed; font-weight: bold; color: #ffffff; border: 1px solid rgba(255,255,255,0.3);">🚫 Slot Not Available</button>';
-                    } else {
-                        // No existing booking for this slot - can book this bus  
-                        buttonHtml = `<button onclick="bookBus('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">📅 Book This Bus</button>`;
-                    }
+                    statusHtml = '<div style="color: #fff; font-weight: bold; padding: 8px 12px; background: rgba(40, 167, 69, 0.8); border-radius: 8px; margin: 10px 0; display: inline-block; border: 2px solid rgba(40, 167, 69, 1);">✅ YOUR CURRENT BOOKING</div>';
+                    buttonHtml = `<button onclick="cancelBooking('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #dc3545, #c82333); border-radius: 8px; color: white; border: none; padding: 12px 20px; font-weight: 600; cursor: pointer;">❌ Cancel Booking</button>`;
+                } else if (hasSlotBooking) {
+                    // This slot is already booked with a different bus
+                    const slotName = bus.slot === 'morning' ? 'Morning' : 'Evening';
+                    const bookedBusNumber = bookedBusInSlot.bus_number;
+                    statusHtml = `<div style="color: #ffffff; font-weight: bold; padding: 12px 16px; background: rgba(255, 193, 7, 0.9); border-radius: 10px; margin: 10px 0; display: inline-block; border: 2px solid rgba(255, 193, 7, 1); box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);">⚠️ ${slotName} Slot Occupied by ${bookedBusNumber}</div>`;
+                    buttonHtml = '<button disabled style="margin-top: 15px; background: linear-gradient(135deg, #6c757d, #545b62); opacity: 0.7; cursor: not-allowed; font-weight: bold; color: #ffffff; border: 1px solid rgba(255,255,255,0.3); padding: 12px 20px; border-radius: 8px;">🚫 Slot Not Available</button>';
                 } else {
-                    // No existing booking - can book this bus
-                    buttonHtml = `<button onclick="bookBus('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">📅 Book This Bus</button>`;
+                    // Slot is available - can book this bus
+                    buttonHtml = `<button onclick="bookBus('${bus.bus_number}')" style="margin-top: 15px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 8px; color: white; border: none; padding: 12px 20px; font-weight: 600; cursor: pointer;" class="book-btn" onmouseenter="this.style.transform='translateY(-2px) scale(1.05)'" onmouseleave="this.style.transform='translateY(0) scale(1)'">📅 Book This Bus</button>`;
                 }
 
                 // Handle missing slot and departure time gracefully
@@ -654,8 +753,11 @@
                 const departureTime = bus.departure_time || (bus.slot === 'morning' ? '08:00' : '16:00');
                 const route = bus.route || 'Route information loading...';
                 
+                // Add visual styling based on booking status
+                const cardStyle = hasSlotBooking && !isThisBusBooked ? 'opacity: 0.6; border: 2px solid rgba(255, 193, 7, 0.5);' : '';
+                
                 busItem.innerHTML = `
-                    <div class="bus-number">🚌 ${bus.bus_number} ${slotIndicator}</div>
+                    <div class="bus-number" style="${cardStyle}">🚌 ${bus.bus_number} ${slotIndicator}</div>
                     <div class="bus-details">📍 Route: ${route}</div>
                     <div class="bus-details">⏰ Departure: ${departureTime} (${slotName})</div>
                     <div class="bus-details">👥 Capacity: ${bus.capacity} seats</div>
@@ -663,6 +765,13 @@
                     ${statusHtml}
                     ${buttonHtml}
                 `;
+                
+                // Apply card-level styling for disabled slots
+                if (hasSlotBooking && !isThisBusBooked) {
+                    busItem.style.opacity = '0.7';
+                    busItem.style.border = '2px solid rgba(255, 193, 7, 0.5)';
+                    busItem.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }
                 busList.appendChild(busItem);
             });
         }
@@ -707,17 +816,35 @@
             try {
                 showResult('🔄 Processing your booking...', 'info');
                 
-                const response = await apiCall('bookings/create', 'POST', {
+                let response = await apiCall('bookings/create', 'POST', {
                     employee_id: employeeId,
                     bus_number: busNumber
                 });
+
+                // If the API reported endpoint-not-found or returned falsy, try one more time (mitigation for intermittent routing)
+                if (!response || (response.message && /endpoint not found/i.test(response.message))) {
+                    console.warn('[bookBus] Initial response indicates endpoint issue, retrying once');
+                    await new Promise(r => setTimeout(r, 300));
+                    response = await apiCall('bookings/create', 'POST', {
+                        employee_id: employeeId,
+                        bus_number: busNumber
+                    });
+                }
                 
                 if (response.status === 'success') {
+                    // Safely extract booking details with fallbacks
+                    const booking = response.booking || response.data || {};
+                    const route = booking.route || 'Route TBD';
+                    const departureTime = booking.departure_time || 'Time TBD';
+                    const slot = booking.slot || 'Unknown';
+                    const slotEmoji = slot === 'morning' ? '🌅' : '🌆';
+                    
                     showResult(`✅ Booking confirmed! 
                     🚌 Bus: ${busNumber}
-                    📍 Route: ${response.data.route}
-                    🕐 Departure: ${response.data.departure_time}
-                    📧 Confirmation details sent to your email.`, 'success');
+                    📍 Route: ${route}
+                    🕐 Departure: ${departureTime} (${slotEmoji} ${slot})
+                    📧 Slot-based booking: One Morning + One Evening allowed
+                    📋 Confirmation details logged.`, 'success');
                     
                     // Refresh the bus list
                     setTimeout(() => {
@@ -743,10 +870,19 @@
             try {
                 showResult('🔄 Cancelling your booking...', 'info');
                 
-                const response = await apiCall('booking/cancel', 'POST', {
+                let response = await apiCall('booking/cancel', 'POST', {
                     employee_id: employeeId,
                     bus_number: busNumber
                 });
+
+                if (!response || (response.message && /endpoint not found/i.test(response.message))) {
+                    console.warn('[cancelBooking] Initial response indicates endpoint issue, retrying once');
+                    await new Promise(r => setTimeout(r, 300));
+                    response = await apiCall('booking/cancel', 'POST', {
+                        employee_id: employeeId,
+                        bus_number: busNumber
+                    });
+                }
                 
                 if (response.status === 'success') {
                     showResult('✅ Booking cancelled successfully!', 'success');

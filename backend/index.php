@@ -37,7 +37,7 @@ try {
     $router->post('/auth/logout', [AuthController::class, 'logout']);
 
     // Public routes (no auth required)
-    $router->get('/schedules/available', [ScheduleController::class, 'getAvailableSchedules']);
+    $router->get('/schedules/available', [ScheduleController::class, 'getSchedules']);
     $router->get('/schedules/{schedule_id}/availability/{date}', [ScheduleController::class, 'getAvailability']);
 
     // Protected user routes (require authentication)
