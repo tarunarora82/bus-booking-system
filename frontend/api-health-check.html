@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking API Health Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .status.pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status.testing {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .response-data {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .test-all-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .test-all-btn:hover {
+            background-color: #0056b3;
+        }
+        .summary {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .summary.pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .summary.fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        h1, h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 Bus Booking System - API Health Check</h1>
+        <p>This page tests all API endpoints and system components to ensure everything is working correctly.</p>
+        
+        <button class="test-all-btn" onclick="runAllTests()">🔍 Run All Tests</button>
+        
+        <div id="summary" class="summary" style="display: none;"></div>
+        
+        <div class="test-section">
+            <h2>🏥 Basic API Health</h2>
+            <div class="test-item" id="health-test">
+                <span>API Health Check</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="health-response" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚌 Bus Availability</h2>
+            <div class="test-item" id="buses-test">
+                <span>Bus Availability API</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="buses-response" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🗄️ Database Connectivity</h2>
+            <div class="test-item" id="db-test">
+                <span>Database Connection via API</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="db-response" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🌐 CORS Headers</h2>
+            <div class="test-item" id="cors-test">
+                <span>Cross-Origin Request Handling</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="cors-response" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>⚡ API Response Time</h2>
+            <div class="test-item" id="performance-test">
+                <span>Network Latency Test</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="performance-response" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Booking Operations</h2>
+            <div class="test-item" id="booking-test">
+                <span>Employee Bookings API</span>
+                <span class="status testing">⏳ Ready to test</span>
+            </div>
+            <div class="response-data" id="booking-response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {};
+        
+        async function runAllTests() {
+            document.getElementById('summary').style.display = 'none';
+            testResults = {};
+            
+            await testAPIHealth();
+            await testBusAvailability();
+            await testDatabaseConnectivity();
+            await testCORSHeaders();
+            await testPerformance();
+            await testBookingOperations();
+            
+            showSummary();
+        }
+        
+        async function testAPIHealth() {
+            const testItem = document.getElementById('health-test');
+            const responseDiv = document.getElementById('health-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/health');
+                const endTime = Date.now();
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (${endTime - startTime}ms)`;
+                    testResults.health = true;
+                } else {
+                    throw new Error('Health check returned non-healthy status');
+                }
+                
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.health = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        async function testBusAvailability() {
+            const testItem = document.getElementById('buses-test');
+            const responseDiv = document.getElementById('buses-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/buses/available');
+                const endTime = Date.now();
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success' && Array.isArray(data.data)) {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (${endTime - startTime}ms)`;
+                    testResults.buses = true;
+                } else {
+                    throw new Error('Bus availability returned invalid data');
+                }
+                
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.buses = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        async function testDatabaseConnectivity() {
+            const testItem = document.getElementById('db-test');
+            const responseDiv = document.getElementById('db-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/admin/settings');
+                const endTime = Date.now();
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (${endTime - startTime}ms)`;
+                    testResults.database = true;
+                } else {
+                    throw new Error('Database connectivity test failed');
+                }
+                
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.database = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        async function testCORSHeaders() {
+            const testItem = document.getElementById('cors-test');
+            const responseDiv = document.getElementById('cors-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/buses/available', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                const endTime = Date.now();
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                if (response.ok && corsHeaders['Access-Control-Allow-Origin'] === '*') {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (${endTime - startTime}ms)`;
+                    testResults.cors = true;
+                } else {
+                    throw new Error('CORS headers not properly configured');
+                }
+                
+                responseDiv.textContent = JSON.stringify(corsHeaders, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.cors = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        async function testPerformance() {
+            const testItem = document.getElementById('performance-test');
+            const responseDiv = document.getElementById('performance-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const times = [];
+                for (let i = 0; i < 5; i++) {
+                    const startTime = Date.now();
+                    const response = await fetch('/api/health');
+                    const endTime = Date.now();
+                    times.push(endTime - startTime);
+                    
+                    if (!response.ok) throw new Error(`Request ${i + 1} failed`);
+                }
+                
+                const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+                const maxTime = Math.max(...times);
+                
+                if (avgTime < 1000 && maxTime < 2000) {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (avg: ${avgTime.toFixed(0)}ms)`;
+                    testResults.performance = true;
+                } else {
+                    statusSpan.className = 'status fail';
+                    statusSpan.textContent = `⚠️ Slow (avg: ${avgTime.toFixed(0)}ms)`;
+                    testResults.performance = false;
+                }
+                
+                const performanceData = {
+                    average_response_time: avgTime.toFixed(2) + 'ms',
+                    max_response_time: maxTime + 'ms',
+                    min_response_time: Math.min(...times) + 'ms',
+                    all_times: times.map(t => t + 'ms')
+                };
+                
+                responseDiv.textContent = JSON.stringify(performanceData, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.performance = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        async function testBookingOperations() {
+            const testItem = document.getElementById('booking-test');
+            const responseDiv = document.getElementById('booking-response');
+            const statusSpan = testItem.querySelector('.status');
+            
+            statusSpan.className = 'status testing';
+            statusSpan.textContent = '🔄 Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/employee/bookings/TEST123');
+                const endTime = Date.now();
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    statusSpan.className = 'status pass';
+                    statusSpan.textContent = `✅ Pass (${endTime - startTime}ms)`;
+                    testResults.booking = true;
+                } else {
+                    throw new Error('Booking operations test failed');
+                }
+                
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                responseDiv.style.display = 'block';
+                
+            } catch (error) {
+                statusSpan.className = 'status fail';
+                statusSpan.textContent = '❌ Failed';
+                testResults.booking = false;
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+        
+        function showSummary() {
+            const summaryDiv = document.getElementById('summary');
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result === true).length;
+            
+            if (passedTests === totalTests) {
+                summaryDiv.className = 'summary pass';
+                summaryDiv.textContent = `🎉 All ${totalTests} tests passed! Your Bus Booking API is fully operational.`;
+            } else {
+                summaryDiv.className = 'summary fail';
+                summaryDiv.textContent = `⚠️ ${passedTests}/${totalTests} tests passed. Some issues need attention.`;
+            }
+            
+            summaryDiv.style.display = 'block';
+        }
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

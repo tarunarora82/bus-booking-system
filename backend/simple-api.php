@@ -4,11 +4,14 @@
  * Production-ready with Intel proxy support
  */
 
-// Corporate proxy and CORS handling
+// Corporate proxy and CORS handling with security improvements
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-CSRF-Token');
 header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
 
 // Handle preflight OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -249,6 +252,18 @@ try {
             break;
             
         case 'admin':
+            // Simple admin authentication check
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (empty($authHeader) || !validateAdminAuth($authHeader)) {
+                http_response_code(401);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Admin authentication required',
+                    'code' => 'UNAUTHORIZED'
+                ]);
+                break;
+            }
+            
             if ($action === 'bookings') {
                 // Get all recent bookings
                 $bookings = getAllRecentBookings();
@@ -693,5 +708,61 @@ Company Transportation Team
 ---
 This is an automated message. Please do not reply to this email."
     ];
+}
+
+// Simple admin authentication function
+function validateAdminAuth($authHeader) {
+    // Extract token from "Bearer TOKEN" format
+    if (strpos($authHeader, 'Bearer ') !== 0) {
+        return false;
+    }
+    
+    $token = substr($authHeader, 7);
+    
+    // Simple token validation (in production, use proper JWT or database lookup)
+    $validTokens = [
+        'admin123', // Simple admin token
+        'intel-admin-2024', // Corporate admin token
+        hash('sha256', 'bus-admin-' . date('Y-m-d')) // Daily rotating token
+    ];
+    
+    return in_array($token, $validTokens);
+}
+
+// Rate limiting function for security
+function checkRateLimit($endpoint) {
+    $client_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $current_time = time();
+    $rate_limit_file = sys_get_temp_dir() . '/bus_api_rate_limit.json';
+    
+    // Load existing rate limit data
+    $rate_data = [];
+    if (file_exists($rate_limit_file)) {
+        $rate_data = json_decode(file_get_contents($rate_limit_file), true) ?? [];
+    }
+    
+    // Clean old entries (older than 1 hour)
+    foreach ($rate_data as $ip => $data) {
+        $rate_data[$ip] = array_filter($data, function($timestamp) use ($current_time) {
+            return ($current_time - $timestamp) < 3600; // 1 hour
+        });
+        if (empty($rate_data[$ip])) {
+            unset($rate_data[$ip]);
+        }
+    }
+    
+    // Check current IP rate
+    $ip_requests = $rate_data[$client_ip] ?? [];
+    if (count($ip_requests) > 100) { // Max 100 requests per hour
+        return false;
+    }
+    
+    // Add current request
+    $rate_data[$client_ip][] = $current_time;
+    
+    // Save rate limit data
+    file_put_contents($rate_limit_file, json_encode($rate_data));
+    
+    return true;
 }
 ?>
