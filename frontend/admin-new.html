@@ -303,13 +303,15 @@
         }
 
         .log-container {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 10px;
             padding: 15px;
             max-height: 300px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
+            color: #333;
+            border: 1px solid rgba(0, 104, 181, 0.3);
         }
 
         .log-entry {
@@ -322,6 +324,118 @@
         .log-error { color: #dc3545; }
         .log-info { color: #17a2b8; }
         .log-warning { color: #ffc107; }
+
+        /* Modal Dialog Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-icon.success { color: #28a745; }
+        .modal-icon.error { color: #dc3545; }
+        .modal-icon.warning { color: #ffc107; }
+        .modal-icon.info { color: #17a2b8; }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-message {
+            font-size: 1rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #00C7FD, #0068B5);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 199, 253, 0.4);
+        }
+
+        .modal-btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
         @media (max-width: 768px) {
             .hero-text h2 { font-size: 1.8rem; }
@@ -434,7 +548,7 @@
                     <div class="file-upload">
                         <button onclick="document.getElementById('employee-file').click()" class="btn btn-success">📁 Select CSV/Excel File</button>
                         <input type="file" id="employee-file" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleEmployeeFile(this)">
-                        <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Employee ID, Name, Email, Department</p>
+                        <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Employee ID, Name, Email</p>
                         <button onclick="downloadEmployeeTemplate()" class="btn btn-warning">📥 Download Template</button>
                     </div>
                     <button onclick="uploadEmployees()" class="btn btn-success" id="employee-upload-btn" disabled>📤 Upload Employees</button>
@@ -454,10 +568,85 @@
         </div>
     </div>
 
+    <!-- Modal Dialog -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-dialog">
+            <div id="modal-icon" class="modal-icon"></div>
+            <div id="modal-title" class="modal-title"></div>
+            <div id="modal-message" class="modal-message"></div>
+            <div id="modal-buttons" class="modal-buttons"></div>
+        </div>
+    </div>
+
     <script>
         const API_BASE_URL = '/api';
         let busFileData = null;
         let employeeFileData = null;
+
+        // Modal Dialog Utilities
+        function showModal(title, message, type = 'info', buttons = null) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('modal-overlay');
+                const icon = document.getElementById('modal-icon');
+                const titleEl = document.getElementById('modal-title');
+                const messageEl = document.getElementById('modal-message');
+                const buttonsEl = document.getElementById('modal-buttons');
+
+                // Set icon based on type
+                const icons = {
+                    success: '✅',
+                    error: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️'
+                };
+                icon.textContent = icons[type] || icons.info;
+                icon.className = `modal-icon ${type}`;
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                // Create buttons
+                buttonsEl.innerHTML = '';
+                if (buttons) {
+                    buttons.forEach(btn => {
+                        const button = document.createElement('button');
+                        button.className = `modal-btn ${btn.class || 'modal-btn-primary'}`;
+                        button.textContent = btn.text;
+                        button.onclick = () => {
+                            overlay.classList.remove('active');
+                            resolve(btn.value);
+                        };
+                        buttonsEl.appendChild(button);
+                    });
+                } else {
+                    const button = document.createElement('button');
+                    button.className = 'modal-btn modal-btn-primary';
+                    button.textContent = 'OK';
+                    button.onclick = () => {
+                        overlay.classList.remove('active');
+                        resolve(true);
+                    };
+                    buttonsEl.appendChild(button);
+                }
+
+                overlay.classList.add('active');
+            });
+        }
+
+        function showSuccess(message, title = 'Success') {
+            return showModal(title, message, 'success');
+        }
+
+        function showError(message, title = 'Error') {
+            return showModal(title, message, 'error');
+        }
+
+        function showConfirm(message, title = 'Confirm Action') {
+            return showModal(title, message, 'warning', [
+                { text: 'Cancel', class: 'modal-btn-secondary', value: false },
+                { text: 'Confirm', class: 'modal-btn-danger', value: true }
+            ]);
+        }
 
         // API Helper
         async function apiCall(endpoint, method = 'GET', data = null) {
@@ -567,11 +756,11 @@
                 document.getElementById('dashboard-details').innerHTML = `
                     <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
                         <h3 style="color: white; margin-bottom: 15px;">🔄 Real-time Status</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                            <div><strong style="color: #00C7FD;">Available Seats:</strong> ${totalCapacity - totalBooked} / ${totalCapacity}</div>
-                            <div><strong style="color: #00C7FD;">Morning Slots:</strong> ${morningBuses} buses</div>
-                            <div><strong style="color: #00C7FD;">Evening Slots:</strong> ${eveningBuses} buses</div>
-                            <div><strong style="color: #00C7FD;">Occupancy:</strong> ${totalBooked} passengers</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; color: white;">
+                            <div><strong style="color: white;">Available Seats:</strong> ${totalCapacity - totalBooked} / ${totalCapacity}</div>
+                            <div><strong style="color: white;">Morning Slots:</strong> ${morningBuses} buses</div>
+                            <div><strong style="color: white;">Evening Slots:</strong> ${eveningBuses} buses</div>
+                            <div><strong style="color: white;">Occupancy:</strong> ${totalBooked} passengers</div>
                         </div>
                     </div>
                 `;
@@ -594,7 +783,7 @@
 
             if (!busData.bus_number || !busData.route || !busData.capacity || !busData.departure_time || !busData.slot) {
                 log('❌ Please fill all bus fields', 'error');
-                alert('Please fill all fields');
+                await showError('Please fill all required fields', 'Missing Information');
                 return;
             }
 
@@ -604,17 +793,17 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Bus added: ${busData.bus_number}`, 'success');
-                    alert(`Bus ${busData.bus_number} added successfully!`);
+                    await showSuccess(`Bus ${busData.bus_number} has been successfully added to the fleet.`, 'Bus Added');
                     // Clear form
                     resetBusForm();
                     loadBuses();
                 } else {
                     log(`❌ Failed to add bus: ${result.message}`, 'error');
-                    alert(`Failed to add bus: ${result.message}`);
+                    await showError(result.message, 'Failed to Add Bus');
                 }
             } catch (error) {
                 log(`❌ Bus add error: ${error.message}`, 'error');
-                alert(`Error adding bus: ${error.message}`);
+                await showError(error.message, 'Error Adding Bus');
             }
         }
 
@@ -643,7 +832,7 @@
                                         <td>${bus.bus_number}</td>
                                         <td>${bus.route}</td>
                                         <td>${bus.capacity}</td>
-                                        <td>${bus.departure_time || 'TBD'}</td>
+                                        <td>${formatTime(bus.departure_time)}</td>
                                         <td>${bus.slot === 'morning' ? '🌅 Morning' : '🌆 Evening'}</td>
                                         <td>${bus.available_seats}/${bus.capacity}</td>
                                         <td>
@@ -675,7 +864,7 @@
 
             if (!employeeData.employee_id || !employeeData.name || !employeeData.email) {
                 log('❌ Please fill all required employee fields', 'error');
-                alert('Please fill all required fields: Employee ID, Name, and Email');
+                await showError('Please fill all required fields: Employee ID, Name, and Email', 'Missing Information');
                 return;
             }
 
@@ -685,7 +874,7 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Employee added: ${employeeData.name}`, 'success');
-                    alert(`Employee ${employeeData.name} added successfully!`);
+                    await showSuccess(`Employee ${employeeData.name} has been successfully added to the system.`, 'Employee Added');
                     // Clear form
                     ['employee-id', 'employee-name', 'employee-email'].forEach(id => {
                         document.getElementById(id).value = '';
@@ -693,11 +882,11 @@
                     loadEmployees();
                 } else {
                     log(`❌ Failed to add employee: ${result.message}`, 'error');
-                    alert(`Failed to add employee: ${result.message}`);
+                    await showError(result.message, 'Failed to Add Employee');
                 }
             } catch (error) {
                 log(`❌ Employee add error: ${error.message}`, 'error');
-                alert(`Error adding employee: ${error.message}`);
+                await showError(error.message, 'Error Adding Employee');
             }
         }
 
@@ -714,7 +903,7 @@
                                     <th>Employee ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
-                                    <th>Department</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -723,7 +912,10 @@
                                         <td>${emp.employee_id}</td>
                                         <td>${emp.name}</td>
                                         <td>${emp.email}</td>
-                                        <td>${emp.department || 'N/A'}</td>
+                                        <td>
+                                            <button onclick="editEmployee('${emp.employee_id}')" class="btn btn-warning" style="padding: 8px 12px; font-size: 0.85rem; margin-right: 5px;">✏️ Edit</button>
+                                            <button onclick="deleteEmployee('${emp.employee_id}')" class="btn btn-danger" style="padding: 8px 12px; font-size: 0.85rem;">🗑️ Delete</button>
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -815,11 +1007,11 @@
         }
 
         function downloadEmployeeTemplate() {
-            const csvContent = "Employee ID,Name,Email,Department\n" +
-                              "12345678,John Doe,john.doe@intel.com,Engineering\n" +
-                              "87654321,Jane Smith,jane.smith@intel.com,IT Support\n" +
-                              "11223344,Mike Johnson,mike.johnson@intel.com,Operations\n" +
-                              "44332211,Sarah Wilson,sarah.wilson@intel.com,HR";
+            const csvContent = "Employee ID,Name,Email\n" +
+                              "12345678,John Doe,john.doe@intel.com\n" +
+                              "87654321,Jane Smith,jane.smith@intel.com\n" +
+                              "11223344,Mike Johnson,mike.johnson@intel.com\n" +
+                              "44332211,Sarah Wilson,sarah.wilson@intel.com";
             
             downloadCSV(csvContent, 'employee_template.csv');
             log('✅ Employee template downloaded', 'success');
@@ -839,13 +1031,135 @@
 
         // Bulk Upload (placeholder for now)
         async function uploadBuses() {
-            if (!busFileData) return;
-            log('🔄 Bulk bus upload functionality coming soon...', 'info');
+            if (!busFileData) {
+                await showError('Please select a file first', 'No File Selected');
+                return;
+            }
+            
+            log('🔄 Processing bus CSV file...');
+            
+            try {
+                const text = await busFileData.text();
+                const lines = text.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    await showError('CSV file is empty or invalid', 'Invalid File');
+                    return;
+                }
+                
+                // Skip header line
+                const dataLines = lines.slice(1);
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const line of dataLines) {
+                    const [bus_number, route, capacity, departure_time, slot] = line.split(',').map(s => s.trim());
+                    
+                    if (!bus_number || !route || !capacity || !departure_time || !slot) {
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    try {
+                        const result = await apiCall('admin/add-bus', 'POST', {
+                            bus_number,
+                            route,
+                            capacity: parseInt(capacity),
+                            departure_time,
+                            slot
+                        });
+                        
+                        if (result.status === 'success') {
+                            successCount++;
+                            log(`✅ Bus added: ${bus_number}`, 'success');
+                        } else {
+                            errorCount++;
+                            log(`❌ Failed to add bus ${bus_number}: ${result.message}`, 'error');
+                        }
+                    } catch (error) {
+                        errorCount++;
+                        log(`❌ Error adding bus ${bus_number}: ${error.message}`, 'error');
+                    }
+                }
+                
+                await showSuccess(
+                    `Successfully added ${successCount} buses.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}`,
+                    'Bulk Upload Complete'
+                );
+                
+                loadBuses();
+                busFileData = null;
+                document.getElementById('bus-file').value = '';
+                document.getElementById('bus-upload-btn').disabled = true;
+            } catch (error) {
+                log(`❌ CSV processing error: ${error.message}`, 'error');
+                await showError('Failed to process CSV file', 'Upload Error');
+            }
         }
 
         async function uploadEmployees() {
-            if (!employeeFileData) return;
-            log('🔄 Bulk employee upload functionality coming soon...', 'info');
+            if (!employeeFileData) {
+                await showError('Please select a file first', 'No File Selected');
+                return;
+            }
+            
+            log('🔄 Processing employee CSV file...');
+            
+            try {
+                const text = await employeeFileData.text();
+                const lines = text.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    await showError('CSV file is empty or invalid', 'Invalid File');
+                    return;
+                }
+                
+                // Skip header line
+                const dataLines = lines.slice(1);
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const line of dataLines) {
+                    const [employee_id, name, email] = line.split(',').map(s => s.trim());
+                    
+                    if (!employee_id || !name || !email) {
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    try {
+                        const result = await apiCall('admin/add-employee', 'POST', {
+                            employee_id,
+                            name,
+                            email
+                        });
+                        
+                        if (result.status === 'success') {
+                            successCount++;
+                            log(`✅ Employee added: ${name}`, 'success');
+                        } else {
+                            errorCount++;
+                            log(`❌ Failed to add employee ${employee_id}: ${result.message}`, 'error');
+                        }
+                    } catch (error) {
+                        errorCount++;
+                        log(`❌ Error adding employee ${employee_id}: ${error.message}`, 'error');
+                    }
+                }
+                
+                await showSuccess(
+                    `Successfully added ${successCount} employees.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}`,
+                    'Bulk Upload Complete'
+                );
+                
+                loadEmployees();
+                employeeFileData = null;
+                document.getElementById('employee-file').value = '';
+                document.getElementById('employee-upload-btn').disabled = true;
+            } catch (error) {
+                log(`❌ CSV processing error: ${error.message}`, 'error');
+                await showError('Failed to process CSV file', 'Upload Error');
+            }
         }
 
         // Edit and Delete Bus Functions
@@ -893,7 +1207,7 @@
 
             if (!busData.route || !busData.capacity || !busData.departure_time || !busData.slot) {
                 log('❌ Please fill all bus fields', 'error');
-                alert('Please fill all fields');
+                await showError('Please fill all required fields', 'Missing Information');
                 return;
             }
 
@@ -908,22 +1222,27 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Bus updated: ${busNumber}`, 'success');
-                    alert(`Bus ${busNumber} updated successfully!`);
+                    await showSuccess(`Bus ${busNumber} has been successfully updated.`, 'Bus Updated');
                     // Reset form
                     resetBusForm();
                     loadBuses();
                 } else {
                     log(`❌ Failed to update bus: ${result.message}`, 'error');
-                    alert(`Failed to update bus: ${result.message}`);
+                    await showError(result.message, 'Failed to Update Bus');
                 }
             } catch (error) {
                 log(`❌ Bus update error: ${error.message}`, 'error');
-                alert(`Error updating bus: ${error.message}`);
+                await showError(error.message, 'Error Updating Bus');
             }
         }
 
         async function deleteBus(busNumber) {
-            if (!confirm(`Are you sure you want to delete bus ${busNumber}?`)) {
+            const confirmed = await showConfirm(
+                `Are you sure you want to delete bus ${busNumber}? This action cannot be undone.`,
+                'Delete Bus'
+            );
+            
+            if (!confirmed) {
                 return;
             }
 
@@ -937,15 +1256,15 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Bus deleted: ${busNumber}`, 'success');
-                    alert(`Bus ${busNumber} deleted successfully!`);
+                    await showSuccess(`Bus ${busNumber} has been successfully removed from the fleet.`, 'Bus Deleted');
                     loadBuses();
                 } else {
                     log(`❌ Failed to delete bus: ${result.message}`, 'error');
-                    alert(`Failed to delete bus: ${result.message}`);
+                    await showError(result.message, 'Failed to Delete Bus');
                 }
             } catch (error) {
                 log(`❌ Bus delete error: ${error.message}`, 'error');
-                alert(`Error deleting bus: ${error.message}`);
+                await showError(error.message, 'Error Deleting Bus');
             }
         }
 
@@ -960,6 +1279,131 @@
             const addButton = document.querySelector('#bus-add button');
             addButton.textContent = '➕ Add Bus';
             addButton.onclick = addBus;
+        }
+
+        // Time formatting utility
+        function formatTime(time24) {
+            if (!time24 || time24 === 'TBD') return 'TBD';
+            const [hours, minutes] = time24.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        // Employee Management Functions
+        async function editEmployee(employeeId) {
+            const employees = await apiCall('admin/employees');
+            if (employees.status !== 'success') return;
+            
+            const employee = employees.data.find(e => e.employee_id === employeeId);
+            if (!employee) {
+                await showError('Employee not found', 'Error');
+                return;
+            }
+            
+            // Populate form with existing values
+            document.getElementById('employee-id').value = employee.employee_id;
+            document.getElementById('employee-name').value = employee.name;
+            document.getElementById('employee-email').value = employee.email;
+            
+            // Disable employee ID field since we're editing
+            document.getElementById('employee-id').disabled = true;
+            
+            // Change button to Update
+            const addButton = document.querySelector('#employee-add button');
+            addButton.textContent = '✏️ Update Employee';
+            addButton.onclick = async function() {
+                await updateEmployee(employeeId);
+            };
+            
+            // Switch to add tab
+            showEmployeeTab('add');
+            showSection('employees');
+            
+            log(`📝 Editing employee ${employeeId}`, 'info');
+        }
+
+        async function updateEmployee(employeeId) {
+            const employeeData = {
+                name: document.getElementById('employee-name').value.trim(),
+                email: document.getElementById('employee-email').value.trim()
+            };
+
+            if (!employeeData.name || !employeeData.email) {
+                log('❌ Please fill all employee fields', 'error');
+                await showError('Please fill all required fields', 'Missing Information');
+                return;
+            }
+
+            try {
+                log(`🔄 Updating employee ${employeeId}...`);
+                const response = await fetch(`${API_BASE_URL}/admin/employee/${employeeId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(employeeData)
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Employee updated: ${employeeId}`, 'success');
+                    await showSuccess(`Employee ${employeeData.name} has been successfully updated.`, 'Employee Updated');
+                    // Reset form
+                    resetEmployeeForm();
+                    loadEmployees();
+                } else {
+                    log(`❌ Failed to update employee: ${result.message}`, 'error');
+                    await showError(result.message, 'Failed to Update Employee');
+                }
+            } catch (error) {
+                log(`❌ Employee update error: ${error.message}`, 'error');
+                await showError(error.message, 'Error Updating Employee');
+            }
+        }
+
+        async function deleteEmployee(employeeId) {
+            const confirmed = await showConfirm(
+                `Are you sure you want to delete employee ${employeeId}? This action cannot be undone.`,
+                'Delete Employee'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                log(`🔄 Deleting employee ${employeeId}...`);
+                const response = await fetch(`${API_BASE_URL}/admin/employee/${employeeId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Employee deleted: ${employeeId}`, 'success');
+                    await showSuccess(`Employee ${employeeId} has been successfully removed from the system.`, 'Employee Deleted');
+                    loadEmployees();
+                } else {
+                    log(`❌ Failed to delete employee: ${result.message}`, 'error');
+                    await showError(result.message, 'Failed to Delete Employee');
+                }
+            } catch (error) {
+                log(`❌ Employee delete error: ${error.message}`, 'error');
+                await showError(error.message, 'Error Deleting Employee');
+            }
+        }
+
+        function resetEmployeeForm() {
+            ['employee-id', 'employee-name', 'employee-email'].forEach(id => {
+                const element = document.getElementById(id);
+                element.value = '';
+                element.disabled = false;
+            });
+            
+            // Reset button
+            const addButton = document.querySelector('#employee-add button');
+            addButton.textContent = '➕ Add Employee';
+            addButton.onclick = addEmployee;
         }
 
         // Initialize

@@ -133,6 +133,13 @@ try {
         $busNumber = $matches[1];
         $input = $inputJson;
         echo json_encode(updateBus($busNumber, $input));
+    } elseif ($method === 'PUT' && preg_match('#^/admin/employee/(.+)$#', $path, $matches)) {
+        $employeeId = $matches[1];
+        $input = $inputJson;
+        echo json_encode(updateEmployee($employeeId, $input));
+    } elseif ($method === 'DELETE' && preg_match('#^/admin/employee/(.+)$#', $path, $matches)) {
+        $employeeId = $matches[1];
+        echo json_encode(deleteEmployee($employeeId));
     } elseif (!empty($action)) {
         // Handle query-style requests for backward compatibility
         handleQueryAction($action, $inputJson);
@@ -905,6 +912,27 @@ function deleteBus($busNumber) {
         ];
     }
     
+    // Check for active bookings on this bus
+    $bookings = loadBookings();
+    $today = date('Y-m-d');
+    $hasActiveBookings = false;
+    
+    foreach ($bookings as $booking) {
+        if ($booking['bus_number'] === $busNumber && 
+            $booking['status'] === 'active' && 
+            $booking['schedule_date'] >= $today) {
+            $hasActiveBookings = true;
+            break;
+        }
+    }
+    
+    if ($hasActiveBookings) {
+        return [
+            'status' => 'error',
+            'message' => 'Cannot delete bus with active bookings. Please cancel all bookings first or wait until they expire.'
+        ];
+    }
+    
     $buses = json_decode(file_get_contents($busesFile), true) ?: [];
     $newBuses = array_filter($buses, function($bus) use ($busNumber) {
         return $bus['bus_number'] !== $busNumber;
@@ -989,6 +1017,76 @@ function getEmployees() {
         'status' => 'success',
         'message' => 'Employees retrieved successfully',
         'data' => $employees
+    ];
+}
+
+function updateEmployee($employeeId, $data) {
+    global $dataPath;
+    $employeesFile = $dataPath . '/employees.json';
+    
+    if (!file_exists($employeesFile)) {
+        return [
+            'status' => 'error',
+            'message' => 'No employees found'
+        ];
+    }
+    
+    $employees = json_decode(file_get_contents($employeesFile), true) ?: [];
+    $found = false;
+    
+    foreach ($employees as &$emp) {
+        if ($emp['employee_id'] === $employeeId) {
+            $emp['name'] = $data['name'] ?? $emp['name'];
+            $emp['email'] = $data['email'] ?? $emp['email'];
+            $emp['department'] = $data['department'] ?? ($emp['department'] ?? '');
+            $found = true;
+            break;
+        }
+    }
+    
+    if (!$found) {
+        return [
+            'status' => 'error',
+            'message' => 'Employee not found'
+        ];
+    }
+    
+    file_put_contents($employeesFile, json_encode($employees, JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Employee updated successfully'
+    ];
+}
+
+function deleteEmployee($employeeId) {
+    global $dataPath;
+    $employeesFile = $dataPath . '/employees.json';
+    
+    if (!file_exists($employeesFile)) {
+        return [
+            'status' => 'error',
+            'message' => 'No employees found'
+        ];
+    }
+    
+    $employees = json_decode(file_get_contents($employeesFile), true) ?: [];
+    $newEmployees = array_filter($employees, function($emp) use ($employeeId) {
+        return $emp['employee_id'] !== $employeeId;
+    });
+    
+    if (count($employees) === count($newEmployees)) {
+        return [
+            'status' => 'error',
+            'message' => 'Employee not found'
+        ];
+    }
+    
+    file_put_contents($employeesFile, json_encode(array_values($newEmployees), JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Employee deleted successfully'
     ];
 }
 ?>

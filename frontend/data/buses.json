@@ -48,8 +48,48 @@
         "id": 6,
         "bus_number": "113A",
         "route": "Whitefield",
+        "capacity": 45,
+        "departure_time": "16:00",
+        "slot": "evening",
+        "booked_seats": 0,
+        "available_seats": 45
+    },
+    {
+        "id": 7,
+        "bus_number": "110",
+        "route": "Electronic City - Whitefield Express",
+        "capacity": 20,
+        "departure_time": "8:00",
+        "slot": "morning",
+        "booked_seats": 0,
+        "available_seats": 20
+    },
+    {
+        "id": 8,
+        "bus_number": "111",
+        "route": "Electronic City - Whitefield Express",
+        "capacity": 30,
+        "departure_time": "16:00",
+        "slot": "evening",
+        "booked_seats": 0,
+        "available_seats": 30
+    },
+    {
+        "id": 9,
+        "bus_number": "120",
+        "route": "Bannerghatta - Marathahalli Direct",
+        "capacity": 45,
+        "departure_time": "8:15",
+        "slot": "morning",
+        "booked_seats": 0,
+        "available_seats": 45
+    },
+    {
+        "id": 10,
+        "bus_number": "124",
+        "route": "Bannerghatta - Marathahalli Direct",
         "capacity": 50,
-        "departure_time": "16:06",
+        "departure_time": "16:15",
         "slot": "evening",
         "booked_seats": 0,
         "available_seats": 50
