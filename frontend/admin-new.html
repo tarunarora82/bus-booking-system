@@ -344,12 +344,10 @@
     <div class="container">
         <div class="main-content">
             <div class="nav-links">
-                <a href="/admin-advanced.html">🏠 Home</a>
                 <button onclick="showSection('dashboard')">📊 Dashboard</button>
                 <button onclick="showSection('buses')">🚌 Buses</button>
                 <button onclick="showSection('employees')">👥 Employees</button>
                 <button onclick="showSection('bookings')">📋 Bookings</button>
-                <a href="/working.html">👤 User View</a>
             </div>
 
             <!-- Dashboard Section -->
@@ -359,6 +357,12 @@
                     <!-- Stats will be loaded here -->
                 </div>
                 <div id="dashboard-details"></div>
+                
+                <!-- Activity Log in Dashboard -->
+                <div style="margin-top: 30px;">
+                    <h2 class="section-title">📜 System Activity Log</h2>
+                    <div id="activity-log" class="log-container"></div>
+                </div>
             </div>
 
             <!-- Bus Management Section -->
@@ -417,7 +421,6 @@
                         <input type="text" id="employee-id" class="form-control" placeholder="Employee ID">
                         <input type="text" id="employee-name" class="form-control" placeholder="Full Name">
                         <input type="email" id="employee-email" class="form-control" placeholder="Email Address">
-                        <input type="text" id="employee-dept" class="form-control" placeholder="Department">
                     </div>
                     <button onclick="addEmployee()" class="btn btn-success">➕ Add Employee</button>
                 </div>
@@ -441,14 +444,12 @@
             <!-- Bookings Section -->
             <div id="bookings" class="content-section" style="display: none;">
                 <h2 class="section-title">📋 Booking Management</h2>
-                <button onclick="loadBookings()" class="btn">🔄 Refresh Bookings</button>
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                    <button onclick="loadBookings('all')" class="btn">� All Bookings</button>
+                    <button onclick="loadBookings('active')" class="btn btn-success">✅ Active Bookings</button>
+                    <button onclick="loadBookings('cancelled')" class="btn btn-danger">❌ Cancelled Bookings</button>
+                </div>
                 <div id="bookings-table" class="table-container"></div>
-            </div>
-
-            <!-- Activity Log -->
-            <div class="content-section">
-                <h2 class="section-title">📜 Activity Log</h2>
-                <div id="activity-log" class="log-container"></div>
             </div>
         </div>
     </div>
@@ -495,7 +496,7 @@
             if (sectionId === 'dashboard') loadDashboard();
             if (sectionId === 'buses') loadBuses();
             if (sectionId === 'employees') loadEmployees();
-            if (sectionId === 'bookings') loadBookings();
+            if (sectionId === 'bookings') loadBookings('all');
         }
 
         function showBusTab(tabId) {
@@ -559,13 +560,17 @@
                     </div>
                 `;
 
+                // Count buses by slot
+                const morningBuses = busesResult.data.filter(bus => bus.slot === 'morning').length;
+                const eveningBuses = busesResult.data.filter(bus => bus.slot === 'evening').length;
+                
                 document.getElementById('dashboard-details').innerHTML = `
                     <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
                         <h3 style="color: white; margin-bottom: 15px;">🔄 Real-time Status</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                             <div><strong style="color: #00C7FD;">Available Seats:</strong> ${totalCapacity - totalBooked} / ${totalCapacity}</div>
-                            <div><strong style="color: #00C7FD;">Morning Slots:</strong> ${Math.floor(totalBuses/2)} buses</div>
-                            <div><strong style="color: #00C7FD;">Evening Slots:</strong> ${Math.floor(totalBuses/2)} buses</div>
+                            <div><strong style="color: #00C7FD;">Morning Slots:</strong> ${morningBuses} buses</div>
+                            <div><strong style="color: #00C7FD;">Evening Slots:</strong> ${eveningBuses} buses</div>
                             <div><strong style="color: #00C7FD;">Occupancy:</strong> ${totalBooked} passengers</div>
                         </div>
                     </div>
@@ -589,6 +594,7 @@
 
             if (!busData.bus_number || !busData.route || !busData.capacity || !busData.departure_time || !busData.slot) {
                 log('❌ Please fill all bus fields', 'error');
+                alert('Please fill all fields');
                 return;
             }
 
@@ -598,16 +604,17 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Bus added: ${busData.bus_number}`, 'success');
+                    alert(`Bus ${busData.bus_number} added successfully!`);
                     // Clear form
-                    ['bus-number', 'bus-route', 'bus-capacity', 'bus-time', 'bus-slot'].forEach(id => {
-                        document.getElementById(id).value = '';
-                    });
+                    resetBusForm();
                     loadBuses();
                 } else {
                     log(`❌ Failed to add bus: ${result.message}`, 'error');
+                    alert(`Failed to add bus: ${result.message}`);
                 }
             } catch (error) {
                 log(`❌ Bus add error: ${error.message}`, 'error');
+                alert(`Error adding bus: ${error.message}`);
             }
         }
 
@@ -627,6 +634,7 @@
                                     <th>Departure</th>
                                     <th>Slot</th>
                                     <th>Available</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -638,6 +646,10 @@
                                         <td>${bus.departure_time || 'TBD'}</td>
                                         <td>${bus.slot === 'morning' ? '🌅 Morning' : '🌆 Evening'}</td>
                                         <td>${bus.available_seats}/${bus.capacity}</td>
+                                        <td>
+                                            <button onclick="editBus('${bus.bus_number}')" class="btn btn-warning" style="padding: 8px 12px; font-size: 0.85rem; margin-right: 5px;">✏️ Edit</button>
+                                            <button onclick="deleteBus('${bus.bus_number}')" class="btn btn-danger" style="padding: 8px 12px; font-size: 0.85rem;">🗑️ Delete</button>
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -658,12 +670,12 @@
             const employeeData = {
                 employee_id: document.getElementById('employee-id').value.trim(),
                 name: document.getElementById('employee-name').value.trim(),
-                email: document.getElementById('employee-email').value.trim(),
-                department: document.getElementById('employee-dept').value.trim()
+                email: document.getElementById('employee-email').value.trim()
             };
 
             if (!employeeData.employee_id || !employeeData.name || !employeeData.email) {
-                log('❌ Please fill required employee fields', 'error');
+                log('❌ Please fill all required employee fields', 'error');
+                alert('Please fill all required fields: Employee ID, Name, and Email');
                 return;
             }
 
@@ -673,16 +685,19 @@
                 
                 if (result.status === 'success') {
                     log(`✅ Employee added: ${employeeData.name}`, 'success');
+                    alert(`Employee ${employeeData.name} added successfully!`);
                     // Clear form
-                    ['employee-id', 'employee-name', 'employee-email', 'employee-dept'].forEach(id => {
+                    ['employee-id', 'employee-name', 'employee-email'].forEach(id => {
                         document.getElementById(id).value = '';
                     });
                     loadEmployees();
                 } else {
                     log(`❌ Failed to add employee: ${result.message}`, 'error');
+                    alert(`Failed to add employee: ${result.message}`);
                 }
             } catch (error) {
                 log(`❌ Employee add error: ${error.message}`, 'error');
+                alert(`Error adding employee: ${error.message}`);
             }
         }
 
@@ -725,10 +740,10 @@
         }
 
         // Booking Management
-        async function loadBookings() {
+        async function loadBookings(status = 'all') {
             try {
-                log('🔄 Loading bookings...');
-                const result = await apiCall('admin/recent-bookings');
+                log(`🔄 Loading ${status} bookings...`);
+                const result = await apiCall(`admin/recent-bookings?status=${status}`);
                 
                 if (result.status === 'success' && result.data) {
                     const tableHtml = `
@@ -741,6 +756,7 @@
                                     <th>Date</th>
                                     <th>Slot</th>
                                     <th>Departure</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -752,6 +768,7 @@
                                         <td>${booking.schedule_date}</td>
                                         <td>${booking.slot === 'morning' ? '🌅 Morning' : '🌆 Evening'}</td>
                                         <td>${booking.departure_time || 'TBD'}</td>
+                                        <td>${booking.status === 'active' ? '✅ Active' : '❌ Cancelled'}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -760,6 +777,7 @@
                     document.getElementById('bookings-table').innerHTML = tableHtml;
                     log(`✅ Loaded ${result.data.length} bookings`, 'success');
                 } else {
+                    document.getElementById('bookings-table').innerHTML = '<p style="color: white; text-align: center; padding: 20px;">No bookings found</p>';
                     log('❌ No bookings found', 'warning');
                 }
             } catch (error) {
@@ -828,6 +846,120 @@
         async function uploadEmployees() {
             if (!employeeFileData) return;
             log('🔄 Bulk employee upload functionality coming soon...', 'info');
+        }
+
+        // Edit and Delete Bus Functions
+        async function editBus(busNumber) {
+            const buses = await apiCall('buses/available');
+            if (buses.status !== 'success') return;
+            
+            const bus = buses.data.find(b => b.bus_number === busNumber);
+            if (!bus) {
+                alert('Bus not found');
+                return;
+            }
+            
+            // Populate form with existing values
+            document.getElementById('bus-number').value = bus.bus_number;
+            document.getElementById('bus-route').value = bus.route;
+            document.getElementById('bus-capacity').value = bus.capacity;
+            document.getElementById('bus-time').value = bus.departure_time;
+            document.getElementById('bus-slot').value = bus.slot;
+            
+            // Disable bus number field since we're editing
+            document.getElementById('bus-number').disabled = true;
+            
+            // Change button to Update
+            const addButton = document.querySelector('#bus-add button');
+            addButton.textContent = '✏️ Update Bus';
+            addButton.onclick = async function() {
+                await updateBus(busNumber);
+            };
+            
+            // Switch to add tab
+            showBusTab('add');
+            showSection('buses');
+            
+            log(`📝 Editing bus ${busNumber}`, 'info');
+        }
+
+        async function updateBus(busNumber) {
+            const busData = {
+                route: document.getElementById('bus-route').value.trim(),
+                capacity: parseInt(document.getElementById('bus-capacity').value),
+                departure_time: document.getElementById('bus-time').value,
+                slot: document.getElementById('bus-slot').value
+            };
+
+            if (!busData.route || !busData.capacity || !busData.departure_time || !busData.slot) {
+                log('❌ Please fill all bus fields', 'error');
+                alert('Please fill all fields');
+                return;
+            }
+
+            try {
+                log(`🔄 Updating bus ${busNumber}...`);
+                const response = await fetch(`${API_BASE_URL}/admin/bus/${busNumber}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(busData)
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Bus updated: ${busNumber}`, 'success');
+                    alert(`Bus ${busNumber} updated successfully!`);
+                    // Reset form
+                    resetBusForm();
+                    loadBuses();
+                } else {
+                    log(`❌ Failed to update bus: ${result.message}`, 'error');
+                    alert(`Failed to update bus: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Bus update error: ${error.message}`, 'error');
+                alert(`Error updating bus: ${error.message}`);
+            }
+        }
+
+        async function deleteBus(busNumber) {
+            if (!confirm(`Are you sure you want to delete bus ${busNumber}?`)) {
+                return;
+            }
+
+            try {
+                log(`🔄 Deleting bus ${busNumber}...`);
+                const response = await fetch(`${API_BASE_URL}/admin/bus/${busNumber}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Bus deleted: ${busNumber}`, 'success');
+                    alert(`Bus ${busNumber} deleted successfully!`);
+                    loadBuses();
+                } else {
+                    log(`❌ Failed to delete bus: ${result.message}`, 'error');
+                    alert(`Failed to delete bus: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Bus delete error: ${error.message}`, 'error');
+                alert(`Error deleting bus: ${error.message}`);
+            }
+        }
+
+        function resetBusForm() {
+            ['bus-number', 'bus-route', 'bus-capacity', 'bus-time', 'bus-slot'].forEach(id => {
+                const element = document.getElementById(id);
+                element.value = '';
+                element.disabled = false;
+            });
+            
+            // Reset button
+            const addButton = document.querySelector('#bus-add button');
+            addButton.textContent = '➕ Add Bus';
+            addButton.onclick = addBus;
         }
 
         // Initialize

@@ -43,5 +43,15 @@
         "arrival_time": "06:45 PM",
         "slot": "evening",
         "enabled": true
+    },
+    {
+        "id": 6,
+        "bus_number": "113A",
+        "route": "Whitefield",
+        "capacity": 50,
+        "departure_time": "16:06",
+        "slot": "evening",
+        "booked_seats": 0,
+        "available_seats": 50
     }
 ]

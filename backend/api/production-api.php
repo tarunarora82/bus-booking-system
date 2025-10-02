@@ -115,6 +115,24 @@ try {
         $resp = createBooking($input);
         logResponseForDebug($path, 'bookings_create_generic', $resp, 200);
         echo json_encode($resp);
+    } elseif ($method === 'GET' && $path === '/admin/recent-bookings') {
+        $status = $_GET['status'] ?? 'all';
+        echo json_encode(getAdminBookings($status));
+    } elseif ($method === 'GET' && $path === '/admin/employees') {
+        echo json_encode(getEmployees());
+    } elseif ($method === 'POST' && $path === '/admin/add-bus') {
+        $input = $inputJson;
+        echo json_encode(addBus($input));
+    } elseif ($method === 'POST' && $path === '/admin/add-employee') {
+        $input = $inputJson;
+        echo json_encode(addEmployee($input));
+    } elseif ($method === 'DELETE' && preg_match('#^/admin/bus/(.+)$#', $path, $matches)) {
+        $busNumber = $matches[1];
+        echo json_encode(deleteBus($busNumber));
+    } elseif ($method === 'PUT' && preg_match('#^/admin/bus/(.+)$#', $path, $matches)) {
+        $busNumber = $matches[1];
+        $input = $inputJson;
+        echo json_encode(updateBus($busNumber, $input));
     } elseif (!empty($action)) {
         // Handle query-style requests for backward compatibility
         handleQueryAction($action, $inputJson);
@@ -540,12 +558,19 @@ function cancelBooking($data) {
     }
 }
 
-function getAdminBookings() {
+function getAdminBookings($statusFilter = 'all') {
     $bookings = loadBookings();
+    
+    if ($statusFilter !== 'all') {
+        $bookings = array_filter($bookings, function($booking) use ($statusFilter) {
+            return isset($booking['status']) && $booking['status'] === $statusFilter;
+        });
+    }
+    
     return [
         'status' => 'success',
         'message' => 'Admin bookings retrieved',
-        'data' => array_slice($bookings, -20) // Last 20 bookings
+        'data' => array_values($bookings) // Re-index array after filtering
     ];
 }
 
@@ -776,5 +801,194 @@ function releaseReservation($data) {
     }
     
     return ['status' => 'error', 'message' => 'Reservation not found or not owned by user'];
+}
+
+function addBus($data) {
+    global $dataPath;
+    $busesFile = $dataPath . '/buses.json';
+    
+    $busNumber = $data['bus_number'] ?? '';
+    $route = $data['route'] ?? '';
+    $capacity = intval($data['capacity'] ?? 0);
+    $departureTime = $data['departure_time'] ?? '';
+    $slot = $data['slot'] ?? '';
+    
+    if (empty($busNumber) || empty($route) || $capacity <= 0 || empty($slot)) {
+        return [
+            'status' => 'error',
+            'message' => 'All fields are required and capacity must be greater than 0'
+        ];
+    }
+    
+    $buses = file_exists($busesFile) ? json_decode(file_get_contents($busesFile), true) ?: [] : [];
+    
+    // Check if bus number already exists
+    foreach ($buses as $bus) {
+        if ($bus['bus_number'] === $busNumber) {
+            return [
+                'status' => 'error',
+                'message' => 'Bus number already exists'
+            ];
+        }
+    }
+    
+    $newBus = [
+        'id' => count($buses) + 1,
+        'bus_number' => $busNumber,
+        'route' => $route,
+        'capacity' => $capacity,
+        'departure_time' => $departureTime,
+        'slot' => $slot,
+        'booked_seats' => 0,
+        'available_seats' => $capacity
+    ];
+    
+    $buses[] = $newBus;
+    file_put_contents($busesFile, json_encode($buses, JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Bus added successfully',
+        'data' => $newBus
+    ];
+}
+
+function updateBus($busNumber, $data) {
+    global $dataPath;
+    $busesFile = $dataPath . '/buses.json';
+    
+    if (!file_exists($busesFile)) {
+        return [
+            'status' => 'error',
+            'message' => 'No buses found'
+        ];
+    }
+    
+    $buses = json_decode(file_get_contents($busesFile), true) ?: [];
+    $found = false;
+    
+    foreach ($buses as &$bus) {
+        if ($bus['bus_number'] === $busNumber) {
+            $bus['route'] = $data['route'] ?? $bus['route'];
+            $bus['capacity'] = intval($data['capacity'] ?? $bus['capacity']);
+            $bus['departure_time'] = $data['departure_time'] ?? $bus['departure_time'];
+            $bus['slot'] = $data['slot'] ?? $bus['slot'];
+            $bus['available_seats'] = $bus['capacity'] - $bus['booked_seats'];
+            $found = true;
+            break;
+        }
+    }
+    
+    if (!$found) {
+        return [
+            'status' => 'error',
+            'message' => 'Bus not found'
+        ];
+    }
+    
+    file_put_contents($busesFile, json_encode($buses, JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Bus updated successfully'
+    ];
+}
+
+function deleteBus($busNumber) {
+    global $dataPath;
+    $busesFile = $dataPath . '/buses.json';
+    
+    if (!file_exists($busesFile)) {
+        return [
+            'status' => 'error',
+            'message' => 'No buses found'
+        ];
+    }
+    
+    $buses = json_decode(file_get_contents($busesFile), true) ?: [];
+    $newBuses = array_filter($buses, function($bus) use ($busNumber) {
+        return $bus['bus_number'] !== $busNumber;
+    });
+    
+    if (count($buses) === count($newBuses)) {
+        return [
+            'status' => 'error',
+            'message' => 'Bus not found'
+        ];
+    }
+    
+    file_put_contents($busesFile, json_encode(array_values($newBuses), JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Bus deleted successfully'
+    ];
+}
+
+function addEmployee($data) {
+    global $dataPath;
+    $employeesFile = $dataPath . '/employees.json';
+    
+    $employeeId = $data['employee_id'] ?? '';
+    $name = $data['name'] ?? '';
+    $email = $data['email'] ?? '';
+    $department = $data['department'] ?? '';
+    
+    if (empty($employeeId) || empty($name) || empty($email)) {
+        return [
+            'status' => 'error',
+            'message' => 'Employee ID, name, and email are required'
+        ];
+    }
+    
+    $employees = file_exists($employeesFile) ? json_decode(file_get_contents($employeesFile), true) ?: [] : [];
+    
+    // Check if employee ID already exists
+    foreach ($employees as $emp) {
+        if ($emp['employee_id'] === $employeeId) {
+            return [
+                'status' => 'error',
+                'message' => 'Employee ID already exists'
+            ];
+        }
+    }
+    
+    $newEmployee = [
+        'id' => count($employees) + 1,
+        'employee_id' => $employeeId,
+        'name' => $name,
+        'email' => $email,
+        'department' => $department
+    ];
+    
+    $employees[] = $newEmployee;
+    file_put_contents($employeesFile, json_encode($employees, JSON_PRETTY_PRINT));
+    
+    return [
+        'status' => 'success',
+        'message' => 'Employee added successfully',
+        'data' => $newEmployee
+    ];
+}
+
+function getEmployees() {
+    global $dataPath;
+    $employeesFile = $dataPath . '/employees.json';
+    
+    if (!file_exists($employeesFile)) {
+        return [
+            'status' => 'success',
+            'message' => 'No employees found',
+            'data' => []
+        ];
+    }
+    
+    $employees = json_decode(file_get_contents($employeesFile), true) ?: [];
+    
+    return [
+        'status' => 'success',
+        'message' => 'Employees retrieved successfully',
+        'data' => $employees
+    ];
 }
 ?>
