@@ -437,6 +437,14 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
+        /* Checkbox styling */
+        .table input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #00C7FD;
+        }
+
         @media (max-width: 768px) {
             .hero-text h2 { font-size: 1.8rem; }
             .nav-links { flex-direction: column; }
@@ -505,7 +513,10 @@
                 </div>
 
                 <div id="bus-list" class="tab-content">
-                    <button onclick="loadBuses()" class="btn">🔄 Refresh</button>
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                        <button onclick="loadBuses()" class="btn">🔄 Refresh</button>
+                        <button onclick="deleteSelectedBuses()" class="btn btn-danger">🗑️ Delete Selected</button>
+                    </div>
                     <div id="buses-table" class="table-container"></div>
                 </div>
 
@@ -514,9 +525,9 @@
                         <button onclick="document.getElementById('bus-file').click()" class="btn btn-success">📁 Select CSV/Excel File</button>
                         <input type="file" id="bus-file" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleBusFile(this)">
                         <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Bus Number, Route, Capacity, Departure Time, Slot</p>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 5px 0;">� Upload will start immediately after file selection</p>
                         <button onclick="downloadBusTemplate()" class="btn btn-warning">📥 Download Template</button>
                     </div>
-                    <button onclick="uploadBuses()" class="btn btn-success" id="bus-upload-btn" disabled>📤 Upload Buses</button>
                 </div>
             </div>
 
@@ -549,9 +560,9 @@
                         <button onclick="document.getElementById('employee-file').click()" class="btn btn-success">📁 Select CSV/Excel File</button>
                         <input type="file" id="employee-file" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleEmployeeFile(this)">
                         <p style="color: rgba(255,255,255,0.8); margin: 10px 0;">Format: Employee ID, Name, Email</p>
-                        <button onclick="downloadEmployeeTemplate()" class="btn btn-warning">📥 Download Template</button>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 5px 0;">� Upload will start immediately after file selection</p>
+                        <button onclick="downloadEmployeeTemplate()" class="btn btn-warning">� Download Template</button>
                     </div>
-                    <button onclick="uploadEmployees()" class="btn btn-success" id="employee-upload-btn" disabled>📤 Upload Employees</button>
                 </div>
             </div>
 
@@ -817,6 +828,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="select-all-buses" onchange="toggleAllBuses(this)"></th>
                                     <th>Bus Number</th>
                                     <th>Route</th>
                                     <th>Capacity</th>
@@ -829,6 +841,7 @@
                             <tbody>
                                 ${result.data.map(bus => `
                                     <tr>
+                                        <td><input type="checkbox" class="bus-checkbox" value="${bus.bus_number}"></td>
                                         <td>${bus.bus_number}</td>
                                         <td>${bus.route}</td>
                                         <td>${bus.capacity}</td>
@@ -978,19 +991,47 @@
         }
 
         // File Upload Handlers
-        function handleBusFile(input) {
+        async function handleBusFile(input) {
             if (input.files.length > 0) {
                 busFileData = input.files[0];
-                document.getElementById('bus-upload-btn').disabled = false;
                 log(`📁 Bus file selected: ${busFileData.name}`, 'info');
+                
+                // Show confirmation modal with upload option
+                const result = await showModal(
+                    'File Selected',
+                    `CSV file "${busFileData.name}" has been selected. Would you like to upload it now?`,
+                    'info',
+                    [
+                        { text: 'Upload Later', class: 'modal-btn-secondary', value: false },
+                        { text: 'Upload Now', class: 'modal-btn-primary', value: true }
+                    ]
+                );
+                
+                if (result) {
+                    await uploadBuses();
+                }
             }
         }
 
-        function handleEmployeeFile(input) {
+        async function handleEmployeeFile(input) {
             if (input.files.length > 0) {
                 employeeFileData = input.files[0];
-                document.getElementById('employee-upload-btn').disabled = false;
                 log(`📁 Employee file selected: ${employeeFileData.name}`, 'info');
+                
+                // Show confirmation modal with upload option
+                const result = await showModal(
+                    'File Selected',
+                    `CSV file "${employeeFileData.name}" has been selected. Would you like to upload it now?`,
+                    'info',
+                    [
+                        { text: 'Upload Later', class: 'modal-btn-secondary', value: false },
+                        { text: 'Upload Now', class: 'modal-btn-primary', value: true }
+                    ]
+                );
+                
+                if (result) {
+                    await uploadEmployees();
+                }
             }
         }
 
@@ -1083,14 +1124,13 @@
                 }
                 
                 await showSuccess(
-                    `Successfully added ${successCount} buses.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}`,
+                    `Successfully processed ${dataLines.length} entries.\n\nAdded: ${successCount} buses${errorCount > 0 ? `\nFailed: ${errorCount}` : ''}`,
                     'Bulk Upload Complete'
                 );
                 
                 loadBuses();
                 busFileData = null;
                 document.getElementById('bus-file').value = '';
-                document.getElementById('bus-upload-btn').disabled = true;
             } catch (error) {
                 log(`❌ CSV processing error: ${error.message}`, 'error');
                 await showError('Failed to process CSV file', 'Upload Error');
@@ -1148,14 +1188,13 @@
                 }
                 
                 await showSuccess(
-                    `Successfully added ${successCount} employees.${errorCount > 0 ? ` Failed: ${errorCount}` : ''}`,
+                    `Successfully processed ${dataLines.length} entries.\n\nAdded: ${successCount} employees${errorCount > 0 ? `\nFailed: ${errorCount}` : ''}`,
                     'Bulk Upload Complete'
                 );
                 
                 loadEmployees();
                 employeeFileData = null;
                 document.getElementById('employee-file').value = '';
-                document.getElementById('employee-upload-btn').disabled = true;
             } catch (error) {
                 log(`❌ CSV processing error: ${error.message}`, 'error');
                 await showError('Failed to process CSV file', 'Upload Error');
@@ -1281,13 +1320,103 @@
             addButton.onclick = addBus;
         }
 
+        // Multi-select bus functions
+        function toggleAllBuses(checkbox) {
+            const checkboxes = document.querySelectorAll('.bus-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function deleteSelectedBuses() {
+            const checkboxes = document.querySelectorAll('.bus-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                await showError('Please select at least one bus to delete', 'No Selection');
+                return;
+            }
+            
+            const busNumbers = Array.from(checkboxes).map(cb => cb.value);
+            const busCount = busNumbers.length;
+            
+            const confirmed = await showConfirm(
+                `Are you sure you want to delete ${busCount} selected bus${busCount > 1 ? 'es' : ''}? This action cannot be undone.`,
+                'Delete Multiple Buses'
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            let successCount = 0;
+            let errorCount = 0;
+            const errors = [];
+            
+            log(`🔄 Deleting ${busCount} selected buses...`, 'info');
+            
+            for (const busNumber of busNumbers) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/bus/${busNumber}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        successCount++;
+                        log(`✅ Bus deleted: ${busNumber}`, 'success');
+                    } else {
+                        errorCount++;
+                        errors.push(`${busNumber}: ${result.message}`);
+                        log(`❌ Failed to delete ${busNumber}: ${result.message}`, 'error');
+                    }
+                } catch (error) {
+                    errorCount++;
+                    errors.push(`${busNumber}: ${error.message}`);
+                    log(`❌ Error deleting ${busNumber}: ${error.message}`, 'error');
+                }
+            }
+            
+            // Show summary
+            if (errorCount === 0) {
+                await showSuccess(
+                    `Successfully deleted all ${successCount} selected buses.`,
+                    'Deletion Complete'
+                );
+            } else {
+                await showModal(
+                    'Deletion Complete',
+                    `Successfully deleted: ${successCount}\nFailed: ${errorCount}\n\n${errors.length > 0 ? 'Errors:\n' + errors.slice(0, 5).join('\n') : ''}`,
+                    'warning'
+                );
+            }
+            
+            // Uncheck select all
+            const selectAllCheckbox = document.getElementById('select-all-buses');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            
+            loadBuses();
+        }
+
         // Time formatting utility
         function formatTime(time24) {
-            if (!time24 || time24 === 'TBD') return 'TBD';
-            const [hours, minutes] = time24.split(':');
-            const hour = parseInt(hours);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hour12 = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+            if (!time24 || time24 === 'TBD' || time24 === '') return 'TBD';
+            
+            // If already formatted (contains AM/PM), return as is
+            if (typeof time24 === 'string' && (time24.includes('AM') || time24.includes('PM'))) {
+                return time24;
+            }
+            
+            // Handle time format
+            const timeStr = String(time24).trim();
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return 'TBD';
+            
+            const hours = parseInt(parts[0]);
+            const minutes = parts[1];
+            
+            if (isNaN(hours)) return 'TBD';
+            
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const hour12 = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
             return `${hour12}:${minutes} ${ampm}`;
         }
 
@@ -1362,6 +1491,12 @@
         }
 
         async function deleteEmployee(employeeId) {
+            // Validate employee ID
+            if (!employeeId || employeeId === 'undefined' || employeeId === 'null') {
+                await showError('Cannot delete employee with invalid or missing ID', 'Invalid Employee ID');
+                return;
+            }
+            
             const confirmed = await showConfirm(
                 `Are you sure you want to delete employee ${employeeId}? This action cannot be undone.`,
                 'Delete Employee'
@@ -1373,7 +1508,7 @@
 
             try {
                 log(`🔄 Deleting employee ${employeeId}...`);
-                const response = await fetch(`${API_BASE_URL}/admin/employee/${employeeId}`, {
+                const response = await fetch(`${API_BASE_URL}/admin/employee/${encodeURIComponent(employeeId)}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 });
