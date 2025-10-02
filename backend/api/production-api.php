@@ -1013,10 +1013,18 @@ function getEmployees() {
     
     $employees = json_decode(file_get_contents($employeesFile), true) ?: [];
     
+    // Filter out employees with undefined, null, or empty employee_id
+    $validEmployees = array_filter($employees, function($emp) {
+        return !empty($emp['employee_id']) && 
+               $emp['employee_id'] !== 'undefined' && 
+               $emp['employee_id'] !== 'null' && 
+               trim($emp['employee_id']) !== '';
+    });
+    
     return [
         'status' => 'success',
         'message' => 'Employees retrieved successfully',
-        'data' => $employees
+        'data' => array_values($validEmployees)
     ];
 }
 

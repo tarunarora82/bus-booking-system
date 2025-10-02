@@ -241,5 +241,29 @@
         "departure_time": "05:30 PM",
         "status": "active",
         "created_at": "2025-10-02 10:05:32"
+    },
+    {
+        "id": "BK1759388459485",
+        "employee_id": "11453732",
+        "bus_number": "BUS001",
+        "schedule_date": "2025-10-02",
+        "slot": "morning",
+        "route": "Metro to Office",
+        "departure_time": "08:00 AM",
+        "status": "cancelled",
+        "created_at": "2025-10-02 12:30:59",
+        "cancelled_at": "2025-10-02 12:31:13"
+    },
+    {
+        "id": "BK1759388466801",
+        "employee_id": "11453732",
+        "bus_number": "124",
+        "schedule_date": "2025-10-02",
+        "slot": "evening",
+        "route": "Bannerghatta - Marathahalli Direct",
+        "departure_time": "16:15",
+        "status": "cancelled",
+        "created_at": "2025-10-02 12:31:06",
+        "cancelled_at": "2025-10-02 12:31:22"
     }
 ]

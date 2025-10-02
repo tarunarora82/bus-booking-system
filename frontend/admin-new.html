@@ -480,6 +480,61 @@
                 </div>
                 <div id="dashboard-details"></div>
                 
+                <!-- System Settings -->
+                <div style="margin-top: 30px; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 25px;">
+                    <h3 style="color: white; margin-bottom: 20px; font-size: 1.3rem;">⚙️ System Settings - Booking Configuration</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                            <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">📅 Advance Booking Days</label>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 10px;">Number of days in advance bookings can be made</p>
+                            <input type="number" id="booking-days" class="form-control" value="1" min="1" max="30" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                            <p style="color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 5px;">Default: 1 day</p>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                            <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">⏰ Booking Cutoff (Minutes)</label>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 10px;">Block bookings X minutes before departure</p>
+                            <input type="number" id="cutoff-minutes" class="form-control" value="10" min="0" max="120" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                            <p style="color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 5px;">Default: 10 minutes</p>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                            <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">🌅 Morning Slot Control</label>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 10px;">Enable/disable morning slot bookings</p>
+                            <label style="display: flex; align-items: center; color: white; cursor: pointer;">
+                                <input type="checkbox" id="morning-enabled" checked style="margin-right: 10px; cursor: pointer; width: 20px; height: 20px;">
+                                <span>Enable Morning Slot Bookings</span>
+                            </label>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                            <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">🎉 Holiday Management</label>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 10px;">Specify dates to block bookings</p>
+                            <textarea id="holiday-dates" class="form-control" placeholder="Enter dates (YYYY-MM-DD), one per line\ne.g., 2025-12-25" rows="3" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); resize: vertical;"></textarea>
+                            <p style="color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 5px;">Format: YYYY-MM-DD (one per line)</p>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                            <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">📅 Weekend Booking Control</label>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 15px;">Disable bookings on weekends</p>
+                            <label style="display: flex; align-items: center; color: white; cursor: pointer; margin-bottom: 10px;">
+                                <input type="checkbox" id="disable-saturday" style="margin-right: 10px; cursor: pointer; width: 20px; height: 20px;">
+                                <span>Disable Saturday Bookings</span>
+                            </label>
+                            <label style="display: flex; align-items: center; color: white; cursor: pointer;">
+                                <input type="checkbox" id="disable-sunday" style="margin-right: 10px; cursor: pointer; width: 20px; height: 20px;">
+                                <span>Disable Sunday Bookings</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button onclick="saveSystemSettings()" class="btn btn-success" style="padding: 15px 40px; font-size: 1.1rem;">💾 Save Settings</button>
+                        <button onclick="loadSystemSettings()" class="btn" style="padding: 15px 40px; font-size: 1.1rem; margin-left: 10px;">🔄 Reset to Saved</button>
+                    </div>
+                </div>
+                
                 <!-- Activity Log in Dashboard -->
                 <div style="margin-top: 30px;">
                     <h2 class="section-title">📜 System Activity Log</h2>
@@ -551,7 +606,10 @@
                 </div>
 
                 <div id="employee-list" class="tab-content">
-                    <button onclick="loadEmployees()" class="btn">🔄 Refresh</button>
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                        <button onclick="loadEmployees()" class="btn">🔄 Refresh</button>
+                        <button onclick="deleteSelectedEmployees()" class="btn btn-danger">🗑️ Delete Selected</button>
+                    </div>
                     <div id="employees-table" class="table-container"></div>
                 </div>
 
@@ -913,6 +971,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th style="width: 50px;"><input type="checkbox" onclick="toggleAllEmployees(this)" style="cursor: pointer;"></th>
                                     <th>Employee ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
@@ -922,6 +981,7 @@
                             <tbody>
                                 ${result.data.map(emp => `
                                     <tr>
+                                        <td><input type="checkbox" class="employee-checkbox" data-employee-id="${emp.employee_id}" style="cursor: pointer;"></td>
                                         <td>${emp.employee_id}</td>
                                         <td>${emp.name}</td>
                                         <td>${emp.email}</td>
@@ -942,6 +1002,65 @@
             } catch (error) {
                 log(`❌ Employee load error: ${error.message}`, 'error');
             }
+        }
+
+        // Toggle all employee checkboxes
+        function toggleAllEmployees(checkbox) {
+            const checkboxes = document.querySelectorAll('.employee-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        // Delete selected employees
+        async function deleteSelectedEmployees() {
+            const selected = document.querySelectorAll('.employee-checkbox:checked');
+            if (selected.length === 0) {
+                await showError('Please select at least one employee to delete', 'No Selection');
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Are you sure you want to delete ${selected.length} selected employee(s)?`,
+                'Confirm Deletion'
+            );
+
+            if (!confirmed) return;
+
+            log(`🔄 Deleting ${selected.length} selected employees...`, 'info');
+            let successCount = 0;
+            let failCount = 0;
+            const errors = [];
+
+            for (const checkbox of selected) {
+                const employeeId = checkbox.getAttribute('data-employee-id');
+                try {
+                    const result = await apiCall(`admin/employee/${employeeId}`, 'DELETE');
+                    if (result.status === 'success') {
+                        log(`✅ Employee deleted: ${employeeId}`, 'success');
+                        successCount++;
+                    } else {
+                        log(`❌ Failed: ${employeeId} - ${result.message}`, 'error');
+                        failCount++;
+                        errors.push(`${employeeId}: ${result.message}`);
+                    }
+                } catch (error) {
+                    log(`❌ Error deleting ${employeeId}: ${error.message}`, 'error');
+                    failCount++;
+                    errors.push(`${employeeId}: ${error.message}`);
+                }
+            }
+
+            // Show summary
+            const summary = `Successfully deleted: ${successCount}\nFailed: ${failCount}${
+                errors.length > 0 ? '\n\nErrors:\n' + errors.join('\n') : ''
+            }`;
+            
+            if (failCount > 0) {
+                await showModal('Deletion Summary', summary, 'warning');
+            } else {
+                await showSuccess(`Successfully deleted ${successCount} employee(s)`);
+            }
+
+            loadEmployees();
         }
 
         // Booking Management
@@ -1541,10 +1660,51 @@
             addButton.onclick = addEmployee;
         }
 
+        // System Settings Management
+        async function saveSystemSettings() {
+            const settings = {
+                advanceBookingDays: parseInt(document.getElementById('booking-days').value) || 1,
+                cutoffMinutes: parseInt(document.getElementById('cutoff-minutes').value) || 10,
+                morningSlotEnabled: document.getElementById('morning-enabled').checked,
+                holidayDates: document.getElementById('holiday-dates').value.split('\n').filter(d => d.trim()),
+                disableSaturday: document.getElementById('disable-saturday').checked,
+                disableSunday: document.getElementById('disable-sunday').checked
+            };
+
+            try {
+                // Save to localStorage for now (can be extended to backend API)
+                localStorage.setItem('systemSettings', JSON.stringify(settings));
+                log('✅ System settings saved successfully', 'success');
+                await showSuccess('System settings saved successfully!', 'Settings Saved');
+            } catch (error) {
+                log(`❌ Error saving settings: ${error.message}`, 'error');
+                await showError('Failed to save system settings', 'Save Error');
+            }
+        }
+
+        function loadSystemSettings() {
+            try {
+                const saved = localStorage.getItem('systemSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    document.getElementById('booking-days').value = settings.advanceBookingDays || 1;
+                    document.getElementById('cutoff-minutes').value = settings.cutoffMinutes || 10;
+                    document.getElementById('morning-enabled').checked = settings.morningSlotEnabled !== false;
+                    document.getElementById('holiday-dates').value = (settings.holidayDates || []).join('\n');
+                    document.getElementById('disable-saturday').checked = settings.disableSaturday || false;
+                    document.getElementById('disable-sunday').checked = settings.disableSunday || false;
+                    log('✅ System settings loaded', 'info');
+                }
+            } catch (error) {
+                log('⚠️ Could not load settings: ' + error.message, 'warning');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             log('🚀 Intel Transportation Admin Dashboard initialized', 'success');
             loadDashboard();
+            loadSystemSettings();
         });
 
         // Auto-refresh dashboard every 60 seconds
