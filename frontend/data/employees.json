@@ -55,13 +55,6 @@
         "department": ""
     },
     {
-        "id": 10,
-        "employee_id": "87654321",
-        "name": "deepak",
-        "email": "jane.smith@intel.com",
-        "department": ""
-    },
-    {
         "id": 11,
         "employee_id": "11223344",
         "name": "dhruti",

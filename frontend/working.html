@@ -664,7 +664,26 @@
                 const buses = await busResponse.json();
                 
                 if (buses.status === 'success' && buses.data) {
-                    displayBuses(buses.data, hasExistingBooking, existingBooking);
+                    // Filter buses based on system settings
+                    let filteredBuses = buses.data;
+                    
+                    // Check if morning slot is disabled in system settings
+                    try {
+                        const settings = localStorage.getItem('systemSettings');
+                        if (settings) {
+                            const systemSettings = JSON.parse(settings);
+                            
+                            // Filter out morning buses if morning slot is disabled
+                            if (systemSettings.morningSlotEnabled === false) {
+                                filteredBuses = filteredBuses.filter(bus => bus.slot !== 'morning');
+                                console.log('Morning slot disabled - filtered out morning buses');
+                            }
+                        }
+                    } catch (error) {
+                        console.log('Could not load system settings:', error);
+                    }
+                    
+                    displayBuses(filteredBuses, hasExistingBooking, existingBooking);
                     
                     if (hasExistingBooking && existingBooking && Array.isArray(existingBooking)) {
                         let bookingDetails = '';
