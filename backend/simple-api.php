@@ -1,8 +1,11 @@
 <?php
 /**
  * Simple Bus Booking API - No Composer Dependencies
- * Production-ready with Intel proxy support
+ * Production-ready with Intel proxy support and Email Notifications
  */
+
+// Include Email Service
+require_once __DIR__ . '/EmailService.php';
 
 // CORS headers - properly configured for cross-origin requests
 header('Access-Control-Allow-Origin: *');
@@ -155,17 +158,35 @@ try {
                 
                 if ($result['status'] === 'success') {
                     $employee = getEmployeeInfo($employeeId);
+                    
+                    // Send email notification
+                    $emailService = new EmailService();
+                    $emailResult = $emailService->sendBookingConfirmation($result['data'], $employee);
+                    
                     $disclaimer = "Booking a slot on the bus does not imply or confirm your physical attendance at the office. Employees must follow the company's attendance policy independently to mark their presence at work.\n\nDeparture Guidelines:\n• Be seated in the shuttle 10 minutes before departure\n• 3:55 PM: First whistle – boarding closes soon\n• 4:00 PM: Final whistle – shuttle departs\n• Boarding/Drop Location: Use your designated site only\n\nBooking should adhere to above guidelines, else will be considered deemed cancelled.";
-                    echo json_encode([
+                    
+                    $response = [
                         'status' => 'success',
                         'message' => 'Booking confirmed successfully',
                         'data' => $result['data'],
                         'employee' => $employee,
                         'disclaimer' => $disclaimer,
-                        'email_notification' => "Confirmation email sent to {$employee['email']}",
-                        'email_content' => generateBookingConfirmationEmail($employee, $result['data']),
                         'intel_proxy' => 'bypassed'
-                    ]);
+                    ];
+                    
+                    // Add email notification status
+                    if ($emailResult['success']) {
+                        $response['email_notification'] = "Confirmation email sent to {$emailResult['email']}";
+                        $response['email_sent'] = true;
+                    } else {
+                        $response['email_notification'] = $emailResult['message'];
+                        $response['email_sent'] = false;
+                        if (isset($emailResult['skip_reason'])) {
+                            $response['email_skip_reason'] = $emailResult['skip_reason'];
+                        }
+                    }
+                    
+                    echo json_encode($response);
                 } else {
                     echo json_encode($result);
                 }
@@ -186,14 +207,31 @@ try {
                 $employee = getEmployeeInfo($employeeId);
                 
                 if ($result['status'] === 'success') {
-                    echo json_encode([
+                    // Send cancellation email notification
+                    $emailService = new EmailService();
+                    $emailResult = $emailService->sendBookingCancellation($result['data'], $employee);
+                    
+                    $response = [
                         'status' => 'success',
                         'message' => 'Booking cancelled successfully',
                         'employee_id' => $employeeId,
                         'employee' => $employee,
-                        'email_notification' => "Cancellation email sent to {$employee['email']}",
                         'intel_proxy' => 'bypassed'
-                    ]);
+                    ];
+                    
+                    // Add email notification status
+                    if ($emailResult['success']) {
+                        $response['email_notification'] = "Cancellation email sent to {$emailResult['email']}";
+                        $response['email_sent'] = true;
+                    } else {
+                        $response['email_notification'] = $emailResult['message'];
+                        $response['email_sent'] = false;
+                        if (isset($emailResult['skip_reason'])) {
+                            $response['email_skip_reason'] = $emailResult['skip_reason'];
+                        }
+                    }
+                    
+                    echo json_encode($response);
                 } else {
                     echo json_encode($result);
                 }
@@ -336,6 +374,15 @@ try {
                     'status' => 'success',
                     'data' => $log,
                     'message' => 'Activity log retrieved'
+                ]);
+            } elseif ($action === 'email-log') {
+                // Get email activity log
+                $emailService = new EmailService();
+                $emailLog = $emailService->getEmailLog(100);
+                echo json_encode([
+                    'status' => 'success',
+                    'data' => ['log' => $emailLog],
+                    'message' => 'Email log retrieved successfully'
                 ]);
             } elseif ($action === 'settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Save system settings

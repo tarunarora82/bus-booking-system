@@ -3,7 +3,11 @@
  * UNIFIED PRODUCTION API - Single Source of Truth
  * Consolidates all API functionality into one endpoint
  * Date: October 1, 2025
+ * Updated: October 7, 2025 - Added Email Notifications
  */
+
+// Include Email Service for notifications
+require_once __DIR__ . '/../EmailService.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -223,6 +227,18 @@ function handleQueryAction($action, $inputJson = null) {
                 $input = $inputJson;
                 echo json_encode(updateAdminSettings($input));
             }
+            break;
+            
+        case 'email-log':
+        case 'admin-email-log':
+            // Get email activity log
+            $emailService = new EmailService();
+            $emailLog = $emailService->getEmailLog(100);
+            echo json_encode([
+                'status' => 'success',
+                'data' => ['log' => $emailLog],
+                'message' => 'Email log retrieved successfully'
+            ]);
             break;
             
         default:
@@ -517,11 +533,30 @@ function createBooking($data) {
         rewind($handle);
         fwrite($handle, json_encode($bookings, JSON_PRETTY_PRINT));
         
-        return [
+        // Send email notification
+        $employeeData = getEmployeeInfoForEmail($employeeId);
+        $emailService = new EmailService();
+        $emailResult = $emailService->sendBookingConfirmation($newBooking, $employeeData);
+        
+        $response = [
             'status' => 'success',
             'message' => 'Booking created successfully',
             'booking' => $newBooking
         ];
+        
+        // Add email notification status
+        if ($emailResult['success']) {
+            $response['email_notification'] = "Confirmation email sent to {$emailResult['email']}";
+            $response['email_sent'] = true;
+        } else {
+            $response['email_notification'] = $emailResult['message'];
+            $response['email_sent'] = false;
+            if (isset($emailResult['skip_reason'])) {
+                $response['email_skip_reason'] = $emailResult['skip_reason'];
+            }
+        }
+        
+        return $response;
         
     } finally {
         // Always release lock
@@ -553,10 +588,31 @@ function cancelBooking($data) {
     
     if ($found) {
         saveBookings($bookings);
-        return [
+        
+        // Send cancellation email notification
+        $employeeData = getEmployeeInfoForEmail($employeeId);
+        $emailService = new EmailService();
+        $cancelledBooking = $bookings[$i];
+        $emailResult = $emailService->sendBookingCancellation($cancelledBooking, $employeeData);
+        
+        $response = [
             'status' => 'success',
             'message' => 'Booking cancelled successfully'
         ];
+        
+        // Add email notification status
+        if ($emailResult['success']) {
+            $response['email_notification'] = "Cancellation email sent to {$emailResult['email']}";
+            $response['email_sent'] = true;
+        } else {
+            $response['email_notification'] = $emailResult['message'];
+            $response['email_sent'] = false;
+            if (isset($emailResult['skip_reason'])) {
+                $response['email_skip_reason'] = $emailResult['skip_reason'];
+            }
+        }
+        
+        return $response;
     } else {
         return [
             'status' => 'error',
@@ -1025,6 +1081,48 @@ function getEmployees() {
         'status' => 'success',
         'message' => 'Employees retrieved successfully',
         'data' => array_values($validEmployees)
+    ];
+}
+
+/**
+ * Get employee information for email notification
+ * Helper function to retrieve employee data with email address
+ */
+function getEmployeeInfoForEmail($employeeId) {
+    global $dataPath;
+    $employeesFile = $dataPath . '/employees.json';
+    
+    if (!file_exists($employeesFile)) {
+        // Return default employee data with generated email
+        return [
+            'employee_id' => $employeeId,
+            'name' => 'Employee ' . $employeeId,
+            'email' => $employeeId . '@intel.com',
+            'department' => 'Unknown'
+        ];
+    }
+    
+    $employees = json_decode(file_get_contents($employeesFile), true) ?: [];
+    
+    // Find employee by ID
+    foreach ($employees as $emp) {
+        if (isset($emp['employee_id']) && $emp['employee_id'] === $employeeId) {
+            // Return employee data with email
+            return [
+                'employee_id' => $emp['employee_id'],
+                'name' => $emp['name'] ?? 'Employee ' . $employeeId,
+                'email' => $emp['email'] ?? null, // Email might not exist
+                'department' => $emp['department'] ?? 'Unknown'
+            ];
+        }
+    }
+    
+    // Employee not found, return default
+    return [
+        'employee_id' => $employeeId,
+        'name' => 'Employee ' . $employeeId,
+        'email' => $employeeId . '@intel.com',
+        'department' => 'Unknown'
     ];
 }
 

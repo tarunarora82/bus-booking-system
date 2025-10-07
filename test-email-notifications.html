@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Notification System - Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .result-area {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .result-area.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .result-area.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .result-area.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .log-viewer {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .log-viewer h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .log-content {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Notification System</h1>
+            <p>Test Suite for Bus Booking Email Notifications</p>
+        </div>
+
+        <div class="info-box">
+            <h3>⚙️ SMTP Configuration</h3>
+            <ul>
+                <li><strong>Server:</strong> smtpauth.intel.com:587</li>
+                <li><strong>From:</strong> sys_github01@intel.com</li>
+                <li><strong>Security:</strong> TLS Encryption</li>
+            </ul>
+        </div>
+
+        <div class="test-grid">
+            <!-- Test 1: Create Booking with Email -->
+            <div class="test-card">
+                <h2>📨 Test Booking Email</h2>
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label>Employee ID:</label>
+                        <input type="text" id="employeeId" value="11453732" placeholder="Enter Employee ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Bus Number:</label>
+                        <select id="busNumber">
+                            <option value="BUS001">BUS001 - Morning Shift</option>
+                            <option value="BUS002">BUS002 - Evening Shift</option>
+                            <option value="BUS003">BUS003 - Night Shift</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Schedule Date:</label>
+                        <input type="date" id="scheduleDate">
+                    </div>
+                    <button type="submit" class="btn btn-primary">🚀 Create Booking & Send Email</button>
+                </form>
+                <div id="bookingResult" class="result-area"></div>
+            </div>
+
+            <!-- Test 2: Cancel Booking with Email -->
+            <div class="test-card">
+                <h2>❌ Test Cancellation Email</h2>
+                <form id="cancelForm">
+                    <div class="form-group">
+                        <label>Employee ID:</label>
+                        <input type="text" id="cancelEmployeeId" value="11453732" placeholder="Enter Employee ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Bus Number:</label>
+                        <select id="cancelBusNumber">
+                            <option value="BUS001">BUS001 - Morning Shift</option>
+                            <option value="BUS002">BUS002 - Evening Shift</option>
+                            <option value="BUS003">BUS003 - Night Shift</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-danger">📧 Cancel Booking & Send Email</button>
+                </form>
+                <div id="cancelResult" class="result-area"></div>
+            </div>
+
+            <!-- Test 3: Employee Without Email -->
+            <div class="test-card">
+                <h2>⚠️ Test Missing Email</h2>
+                <form id="noEmailForm">
+                    <div class="form-group">
+                        <label>Employee ID (No Email):</label>
+                        <input type="text" id="noEmailEmployeeId" value="NO_EMAIL_EMP" placeholder="Employee without email">
+                    </div>
+                    <div class="form-group">
+                        <label>Bus Number:</label>
+                        <select id="noEmailBusNumber">
+                            <option value="BUS001">BUS001 - Morning Shift</option>
+                            <option value="BUS002">BUS002 - Evening Shift</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-info">🧪 Test Error Handling</button>
+                </form>
+                <div id="noEmailResult" class="result-area"></div>
+            </div>
+
+            <!-- Test 4: View Email Log -->
+            <div class="test-card">
+                <h2>📋 Email Activity Log</h2>
+                <button class="btn btn-info" onclick="viewEmailLog()">🔍 View Email Log</button>
+                <button class="btn btn-primary" onclick="refreshLog()" style="margin-top: 10px;">🔄 Refresh Log</button>
+                <div id="logResult" class="result-area"></div>
+            </div>
+        </div>
+
+        <div class="log-viewer">
+            <h2>📊 Real-time Email Log Monitor</h2>
+            <div class="log-content" id="logContent">
+                Click "View Email Log" to see email activity...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date as default
+        document.getElementById('scheduleDate').valueAsDate = new Date();
+
+        const API_BASE = 'http://localhost:3000';
+
+        // Utility function for API calls
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            return await response.json();
+        }
+
+        // Test 1: Create Booking with Email
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('bookingResult');
+            resultDiv.className = 'result-area info';
+            resultDiv.textContent = '⏳ Creating booking and sending email...';
+
+            try {
+                const data = {
+                    employee_id: document.getElementById('employeeId').value,
+                    bus_number: document.getElementById('busNumber').value,
+                    schedule_date: document.getElementById('scheduleDate').value
+                };
+
+                const result = await apiCall('/booking/create', 'POST', data);
+                
+                resultDiv.className = result.status === 'success' ? 'result-area success' : 'result-area error';
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+
+                if (result.status === 'success') {
+                    if (result.email_sent) {
+                        alert(`✅ Booking Created!\n\n📧 Email sent to: ${result.email_notification}\n🎫 Booking ID: ${result.data.booking_id}`);
+                    } else {
+                        alert(`✅ Booking Created!\n\n⚠️ Email Status: ${result.email_notification}\n🎫 Booking ID: ${result.data.booking_id}`);
+                    }
+                    refreshLog();
+                }
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Test 2: Cancel Booking with Email
+        document.getElementById('cancelForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('cancelResult');
+            resultDiv.className = 'result-area info';
+            resultDiv.textContent = '⏳ Cancelling booking and sending email...';
+
+            try {
+                const data = {
+                    employee_id: document.getElementById('cancelEmployeeId').value,
+                    bus_number: document.getElementById('cancelBusNumber').value
+                };
+
+                const result = await apiCall('/booking/cancel', 'POST', data);
+                
+                resultDiv.className = result.status === 'success' ? 'result-area success' : 'result-area error';
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+
+                if (result.status === 'success') {
+                    if (result.email_sent) {
+                        alert(`✅ Booking Cancelled!\n\n📧 Email sent to: ${result.email_notification}`);
+                    } else {
+                        alert(`✅ Booking Cancelled!\n\n⚠️ Email Status: ${result.email_notification}`);
+                    }
+                    refreshLog();
+                }
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Test 3: Employee Without Email
+        document.getElementById('noEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('noEmailResult');
+            resultDiv.className = 'result-area info';
+            resultDiv.textContent = '⏳ Testing error handling for missing email...';
+
+            try {
+                const data = {
+                    employee_id: document.getElementById('noEmailEmployeeId').value,
+                    bus_number: document.getElementById('noEmailBusNumber').value,
+                    schedule_date: document.getElementById('scheduleDate').value
+                };
+
+                const result = await apiCall('/booking/create', 'POST', data);
+                
+                resultDiv.className = 'result-area info';
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+
+                if (result.status === 'success' && !result.email_sent) {
+                    alert(`✅ Test Passed!\n\n📋 Booking created successfully\n⚠️ Email not sent: ${result.email_notification}\n💡 Error handling working correctly!`);
+                }
+                refreshLog();
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // View Email Log
+        async function viewEmailLog() {
+            const resultDiv = document.getElementById('logResult');
+            resultDiv.className = 'result-area info';
+            resultDiv.textContent = '⏳ Loading email log...';
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/email-log`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    resultDiv.className = 'result-area success';
+                    resultDiv.textContent = result.data.log || 'No log entries yet';
+                    
+                    // Also update the log viewer
+                    document.getElementById('logContent').textContent = result.data.log || 'No log entries yet';
+                } else {
+                    resultDiv.className = 'result-area error';
+                    resultDiv.textContent = `Error: ${result.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Refresh log automatically
+        async function refreshLog() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/email-log`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('logContent').textContent = result.data.log || 'No log entries yet';
+                }
+            } catch (error) {
+                console.error('Failed to refresh log:', error);
+            }
+        }
+
+        // Auto-refresh log every 10 seconds
+        setInterval(refreshLog, 10000);
+
+        // Initial log load
+        window.addEventListener('load', () => {
+            viewEmailLog();
+        });
+    </script>
+</body>
+</html>
